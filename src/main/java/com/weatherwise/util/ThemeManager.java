@@ -15,35 +15,42 @@ public class ThemeManager {
 
     public static void setMainWindowController(MainWindowController c) {
         mainController = c;
+        // Re-apply tema saat controller baru terdaftar (pindah halaman)
+        applyChrome(currentTheme);
     }
 
     public static void apply(Theme theme) {
         currentTheme = theme;
         Platform.runLater(() -> {
-            switch (theme) {
-                case LIGHT -> {
-                    Application.setUserAgentStylesheet(
-                        new PrimerLight().getUserAgentStylesheet());
-                    if (mainController != null)
-                        mainController.applyThemeToChrome(Theme.LIGHT);
-                }
-                case DARK -> {
-                    Application.setUserAgentStylesheet(
-                        new PrimerDark().getUserAgentStylesheet());
-                    if (mainController != null)
-                        mainController.applyThemeToChrome(Theme.DARK);
-                }
-                case SYSTEM -> {
-                    boolean isDark = isSystemDark();
-                    Application.setUserAgentStylesheet(isDark
-                        ? new PrimerDark().getUserAgentStylesheet()
-                        : new PrimerLight().getUserAgentStylesheet());
-                    Theme resolved = isDark ? Theme.DARK : Theme.LIGHT;
-                    if (mainController != null)
-                        mainController.applyThemeToChrome(resolved);
-                }
-            }
+            Theme resolved = resolveTheme(theme);
+            applyStylesheet(resolved);
+            applyChrome(resolved);
         });
+    }
+
+    /** Dipanggil dari loadPageWithLoader agar chrome selalu sinkron */
+    public static void reapplyChrome() {
+        Platform.runLater(() -> applyChrome(resolveTheme(currentTheme)));
+    }
+
+    private static Theme resolveTheme(Theme theme) {
+        if (theme != Theme.SYSTEM) return theme;
+        return isSystemDark() ? Theme.DARK : Theme.LIGHT;
+    }
+
+    private static void applyStylesheet(Theme resolved) {
+        if (resolved == Theme.DARK) {
+            Application.setUserAgentStylesheet(
+                new PrimerDark().getUserAgentStylesheet());
+        } else {
+            Application.setUserAgentStylesheet(
+                new PrimerLight().getUserAgentStylesheet());
+        }
+    }
+
+    private static void applyChrome(Theme resolved) {
+        if (mainController != null)
+            mainController.applyThemeToChrome(resolved);
     }
 
     private static boolean isSystemDark() {

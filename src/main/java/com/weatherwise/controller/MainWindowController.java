@@ -22,37 +22,49 @@ import java.util.List;
 
 public class MainWindowController {
 
-    @FXML private StackPane contentArea;
-    @FXML private TextField searchField;
+    @FXML
+    private StackPane contentArea;
+    @FXML
+    private TextField searchField;
 
-    @FXML private Button sidebarDashboard;
-    @FXML private Button sidebarMaps;
-    @FXML private Button sidebarForecast;
-    @FXML private Button sidebarSettings;
+    @FXML
+    private Button sidebarDashboard;
+    @FXML
+    private Button sidebarMaps;
+    @FXML
+    private Button sidebarForecast;
+    @FXML
+    private Button sidebarSettings;
 
-    @FXML private Button navDashboard;
-    @FXML private Button navMaps;
-    @FXML private Button navForecast;
-    @FXML private Button navSettings;
-
+//    @FXML
+//    private Button navDashboard;
+//    @FXML
+//    private Button navMaps;
+//    @FXML
+//    private Button navForecast;
+//    @FXML
+//    private Button navSettings;
     // fx:id yang ditambahkan di MainWindow.fxml
-    @FXML private HBox topNavBar;
-    @FXML private VBox sidebarPanel;
+    @FXML
+    private HBox topNavBar;
+    @FXML
+    private VBox sidebarPanel;
 
     private List<Button> sidebarButtons;
-    private List<Button> topNavButtons;
+//    private List<Button> topNavButtons;
 
     private final GeocodingService geocodingService = new GeocodingService();
 
     @FXML
     public void initialize() {
         sidebarButtons = List.of(sidebarDashboard, sidebarMaps,
-                                  sidebarForecast, sidebarSettings);
-        topNavButtons  = List.of(navDashboard, navMaps,
-                                  navForecast, navSettings);
+                sidebarForecast, sidebarSettings);
+//        topNavButtons = List.of(navDashboard, navMaps,
+//                navForecast, navSettings);
 
-        if (searchField != null)
+        if (searchField != null) {
             searchField.setOnAction(e -> handleGlobalSearch());
+        }
 
         // Daftarkan ke ThemeManager agar dark mode bisa ubah navbar & sidebar
         ThemeManager.setMainWindowController(this);
@@ -61,104 +73,122 @@ public class MainWindowController {
     }
 
     // ── Navigasi ──────────────────────────────────────────────
-
-    @FXML private void handleNavDashboard() {
-        setActiveNav(sidebarDashboard, navDashboard);
+    @FXML
+    private void handleNavDashboard() {
+        setActiveNav(sidebarDashboard);
         AppState state = AppState.getInstance();
         FXMLLoader loader = loadPageWithLoader("Dashboard");
         if (loader != null) {
             DashboardController dc = loader.getController();
-            if (dc != null) dc.loadWeatherData(state.getLat(), state.getLon());
-        }
-    }
-
-    @FXML private void handleNavMaps() {
-        setActiveNav(sidebarMaps, navMaps);
-        AppState state = AppState.getInstance();
-        FXMLLoader loader = loadPageWithLoader("RadarMap");
-        if (loader != null && state.isChanged()) {
-            RadarMapController rc = loader.getController();
-            if (rc != null) {
-                // Tunggu map selesai init baru fly
-                Thread t = new Thread(() -> {
-                    try { Thread.sleep(1800); } catch (InterruptedException ignored) {}
-                    Platform.runLater(() ->
-                        rc.flyToCity(state.getLat(), state.getLon(),
-                                     state.getCityName(), state.getCityName()));
-                });
-                t.setDaemon(true);
-                t.start();
+            if (dc != null) {
+                dc.loadWeatherData(state.getLat(), state.getLon());
             }
         }
     }
 
-    @FXML private void handleNavForecast() {
-        setActiveNav(sidebarForecast, navForecast);
+    @FXML
+    private void handleNavMaps() {
+        setActiveNav(sidebarMaps);
+        // AppState.isChanged() & clearChanged() sudah dihandle di RadarMapController.initialize()
+        loadPage("RadarMap");
+    }
+
+    @FXML
+    private void handleNavForecast() {
+        setActiveNav(sidebarForecast);
         AppState state = AppState.getInstance();
         FXMLLoader loader = loadPageWithLoader("Forecast");
         if (loader != null) {
             ForecastController fc = loader.getController();
-            if (fc != null)
+            if (fc != null) {
                 fc.setLocation(state.getLat(), state.getLon(), state.getCityName());
+            }
         }
     }
 
-    @FXML private void handleNavSettings() {
-        setActiveNav(sidebarSettings, navSettings);
+    @FXML
+    private void handleNavSettings() {
+        setActiveNav(sidebarSettings);
         loadPage("Settings");
     }
 
-    @FXML private void handleNotification() {}
-    @FXML private void handleSignOut()      {}
-
-    // ── Global Search ─────────────────────────────────────────
+    @FXML
+    private void handleNotification() {
+    }
 
     @FXML
+    private void handleSignOut() {
+    }
+
+    // ── Global Search ─────────────────────────────────────────
+    @FXML
     private void handleGlobalSearch() {
-        if (searchField == null) return;
+        if (searchField == null) {
+            return;
+        }
         String query = searchField.getText().trim();
-        if (query.isEmpty()) return;
+        if (query.isEmpty()) {
+            return;
+        }
 
         Task<List<Location>> task = new Task<>() {
-            @Override protected List<Location> call() throws Exception {
+            @Override
+            protected List<Location> call() throws Exception {
                 return geocodingService.searchCity(query);
             }
         };
         task.setOnSucceeded(e -> {
             List<Location> results = task.getValue();
-            if (results.isEmpty()) return;
+            if (results.isEmpty()) {
+                return;
+            }
             Location first = results.get(0);
             Platform.runLater(() -> {
                 searchField.clear();
                 // Simpan ke AppState
                 AppState.getInstance().setLocation(
-                    first.getLat(), first.getLon(), first.getDisplayName());
-                setActiveNav(sidebarDashboard, navDashboard);
+                        first.getLat(), first.getLon(), first.getDisplayName());
+                setActiveNav(sidebarDashboard);
                 FXMLLoader loader = loadPageWithLoader("Dashboard");
                 if (loader != null) {
                     DashboardController dc = loader.getController();
-                    if (dc != null)
+                    if (dc != null) {
                         dc.loadWeatherData(first.getLat(), first.getLon());
+                    }
                 }
             });
         });
         task.setOnFailed(e -> System.err.println("Search error: "
-            + (task.getException() != null ? task.getException().getMessage() : "")));
+                + (task.getException() != null ? task.getException().getMessage() : "")));
 
-        Thread t = new Thread(task); t.setDaemon(true); t.start();
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
     }
 
     // ── Load Halaman ──────────────────────────────────────────
-
     private void loadPage(String pageName) {
         loadPageWithLoader(pageName);
     }
 
     private FXMLLoader loadPageWithLoader(String pageName) {
         try {
+            // Dispose controller aktif sebelumnya untuk cegah task zombie
+            if (!contentArea.getChildren().isEmpty()) {
+                Node old = contentArea.getChildren().get(0);
+                if (old.getUserData() instanceof DashboardController dc) {
+                    dc.dispose();
+                }
+            }
+
             FXMLLoader loader = new FXMLLoader(
-                App.class.getResource("/fxml/" + pageName + ".fxml"));
+                    App.class.getResource("/fxml/" + pageName + ".fxml"));
             Node page = loader.load();
+
+            // Simpan controller di userData node agar bisa dispose nanti
+            if (loader.getController() instanceof DashboardController dc) {
+                page.setUserData(dc);
+            }
 
             if (page instanceof Region region) {
                 region.setMaxWidth(Double.MAX_VALUE);
@@ -166,6 +196,7 @@ public class MainWindowController {
                 StackPane.setAlignment(region, javafx.geometry.Pos.TOP_LEFT);
             }
             contentArea.getChildren().setAll(page);
+            ThemeManager.reapplyChrome();
             return loader;
         } catch (IOException e) {
             System.err.println("Gagal load halaman: " + pageName);
@@ -175,52 +206,48 @@ public class MainWindowController {
     }
 
     // ── Apply Dark/Light ke Chrome (navbar & sidebar) ─────────
-
     public void applyThemeToChrome(ThemeManager.Theme theme) {
         boolean dark = (theme == ThemeManager.Theme.DARK);
 
-        String navBg     = dark ? "#1e293b" : "white";
+        String navBg = dark ? "#1e293b" : "white";
         String navBorder = dark ? "#334155" : "#e2e8f0";
-        String sideBg    = dark ? "#1e293b" : "white";
-        String sideBdr   = dark ? "#334155" : "#e2e8f0";
-        String contBg    = dark ? "#0f172a" : "#f6f7f8";
+        String sideBg = dark ? "#1e293b" : "white";
+        String sideBdr = dark ? "#334155" : "#e2e8f0";
+        String contBg = dark ? "#0f172a" : "#f6f7f8";
 
-        if (topNavBar != null)
+        if (topNavBar != null) {
             topNavBar.setStyle(
-                "-fx-background-color: " + navBg + ";"
-              + "-fx-border-color: " + navBorder + ";"
-              + "-fx-border-width: 0 0 1 0;"
-              + "-fx-padding: 12 24 12 24;");
+                    "-fx-background-color: " + navBg + ";"
+                    + "-fx-border-color: " + navBorder + ";"
+                    + "-fx-border-width: 0 0 1 0;"
+                    + "-fx-padding: 12 24 12 24;");
+        }
 
-        if (sidebarPanel != null)
+        if (sidebarPanel != null) {
             sidebarPanel.setStyle(
-                "-fx-background-color: " + sideBg + ";"
-              + "-fx-border-color: " + sideBdr + ";"
-              + "-fx-border-width: 0 1 0 0;"
-              + "-fx-pref-width: 220;"
-              + "-fx-min-width: 220;"
-              + "-fx-padding: 24 12 24 12;");
+                    "-fx-background-color: " + sideBg + ";"
+                    + "-fx-border-color: " + sideBdr + ";"
+                    + "-fx-border-width: 0 1 0 0;"
+                    + "-fx-pref-width: 220;"
+                    + "-fx-min-width: 220;"
+                    + "-fx-padding: 24 12 24 12;");
+        }
 
-        if (contentArea != null)
+        if (contentArea != null) {
             contentArea.setStyle("-fx-background-color: " + contBg + ";");
+        }
     }
 
     // ── Set Active Nav ────────────────────────────────────────
-
-    private void setActiveNav(Button activeSidebar, Button activeTopNav) {
+    private void setActiveNav(Button activeSidebar) {
         for (Button btn : sidebarButtons) {
             btn.getStyleClass().remove("nav-item-active");
-            if (!btn.getStyleClass().contains("nav-item"))
+            if (!btn.getStyleClass().contains("nav-item")) {
                 btn.getStyleClass().add("nav-item");
-        }
-        for (Button btn : topNavButtons) {
-            btn.getStyleClass().remove("nav-top-active");
-            if (!btn.getStyleClass().contains("nav-top"))
-                btn.getStyleClass().add("nav-top");
+            }
         }
         activeSidebar.getStyleClass().remove("nav-item");
         activeSidebar.getStyleClass().add("nav-item-active");
-        activeTopNav.getStyleClass().remove("nav-top");
-        activeTopNav.getStyleClass().add("nav-top-active");
     }
+
 }

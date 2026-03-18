@@ -1,11 +1,12 @@
 package com.weatherwise.controller;
 
-import com.weatherwise.util.AppConfig;
 import com.weatherwise.model.CurrentWeather;
+import java.util.Locale;
 import com.weatherwise.service.WeatherService;
+import com.weatherwise.util.AppConfig;
 import com.weatherwise.util.AppState;
-import javafx.concurrent.Task;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -38,6 +39,12 @@ public class RadarMapController {
     private boolean pageLoaded = false;
     private boolean mapInited = false;
 
+    // Pending fly-to: disimpan jika dipanggil sebelum map siap
+    private double pendingLat = Double.NaN;
+    private double pendingLon = Double.NaN;
+    private String pendingName = null;
+    private String pendingDesc = null;
+
     private final WeatherService weatherService = new WeatherService();
 
     @FXML
@@ -48,31 +55,35 @@ public class RadarMapController {
         mapWebView.setMinSize(100, 100);
         mapWebView.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
+        // Selalu fly ke koordinat AppState saat ini (bukan hanya saat isChanged)
+        AppState state = AppState.getInstance();
+        pendingLat = state.getLat();
+        pendingLon = state.getLon();
+        pendingName = state.getCityName();
+        pendingDesc = state.getCityName();
+        state.clearChanged();
+
         loadMap();
         fetchAndUpdateOverlay();
+    }
 
-        mapWebView.sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) {
-                newScene.windowProperty().addListener((obsW, oldW, newW) -> {
-                    if (newW != null) {
-                        Thread t = new Thread(() -> {
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException ignored) {
-                                Thread.currentThread().interrupt();
-                            }
-                            Platform.runLater(() -> {
-                                if (pageLoaded && !mapInited) {
-                                    callInitMap();
-                                }
-                            });
-                        });
-                        t.setDaemon(true);
-                        t.start();
-                    }
-                });
-            }
-        });
+    private void onMapReady() {
+        // Dipanggil tepat setelah initMap() berhasil dieksekusi
+        String apiKey = AppConfig.getApiKey();
+        if (!apiKey.isEmpty()) {
+            webEngine.executeScript("setApiKey('" + apiKey + "');");
+        }
+
+        // Eksekusi pending fly-to jika ada
+        if (!Double.isNaN(pendingLat)) {
+            String name = pendingName != null ? pendingName.replace("'", "\\'") : "";
+            String desc = pendingDesc != null ? pendingDesc.replace("'", "\\'") : "";
+            webEngine.executeScript(String.format(java.util.Locale.US,
+                    "flyToCity(%f, %f, '%s', '%s');", pendingLat, pendingLon, name, desc));
+            updateOverlay(pendingName, pendingDesc);
+            // Reset pending
+            pendingLat = Double.NaN;
+        }
     }
 
     private void callInitMap() {
@@ -90,27 +101,17 @@ public class RadarMapController {
         }
 
         mapInited = true;
-        final double fw = w, fh = h;
-        System.out.println("\uD83D\uDDFA\uFE0F initMap: " + fw + "x" + fh);
-
         webEngine.executeScript(
-                "document.getElementById('map').style.width='" + (int) fw + "px';"
-                + "document.getElementById('map').style.height='" + (int) fh + "px';"
-        );
+                "document.getElementById('map').style.width='" + (int) w + "px';"
+                + "document.getElementById('map').style.height='" + (int) h + "px';");
         webEngine.executeScript("initMap();");
-
-        // Kirim API key ke JavaScript setelah map init
-        String apiKey = AppConfig.getApiKey();
-        if (!apiKey.isEmpty()) {
-            webEngine.executeScript("setApiKey('" + apiKey + "');");
-            System.out.println("\u2705 API key dikirim ke radar map");
-        }
+        onMapReady();
     }
 
     private void loadMap() {
         URL mapUrl = getClass().getResource("/map/radar_map.html");
         if (mapUrl == null) {
-            System.err.println("\u274c radar_map.html tidak ditemukan!");
+            System.err.println("❌ radar_map.html tidak ditemukan!");
             return;
         }
 
@@ -120,7 +121,6 @@ public class RadarMapController {
                 (obs, oldState, newState) -> {
                     if (newState == Worker.State.SUCCEEDED && !pageLoaded) {
                         pageLoaded = true;
-                        System.out.println("\u2705 HTML loaded.");
                         Platform.runLater(() -> {
                             double w = mapWebView.getLayoutBounds().getWidth();
                             double h = mapWebView.getLayoutBounds().getHeight();
@@ -128,14 +128,16 @@ public class RadarMapController {
                                 mapInited = true;
                                 webEngine.executeScript(
                                         "document.getElementById('map').style.width='" + (int) w + "px';"
-                                        + "document.getElementById('map').style.height='" + (int) h + "px';"
-                                );
+                                        + "document.getElementById('map').style.height='" + (int) h + "px';");
                                 webEngine.executeScript("initMap();");
-                                // Kirim API key
-                                String apiKey = AppConfig.getApiKey();
-                                if (!apiKey.isEmpty()) {
-                                    webEngine.executeScript("setApiKey('" + apiKey + "');");
-                                }
+                                onMapReady();
+                            } else if (!mapInited) {
+                                // Fallback: tunggu scene
+                                mapWebView.sceneProperty().addListener((o, os, ns) -> {
+                                    if (ns != null && !mapInited) {
+                                        callInitMap();
+                                    }
+                                });
                             }
                         });
                     }
@@ -158,6 +160,46 @@ public class RadarMapController {
                 overlayCondition.setText(condition);
             }
         });
+    }
+
+    public void flyToCity(double lat, double lng, String name, String desc) {
+        if (pageLoaded && mapInited) {
+            // Map sudah siap, langsung eksekusi
+            String n = name != null ? name.replace("'", "\\'") : "";
+            String d = desc != null ? desc.replace("'", "\\'") : "";
+            execJS(String.format(java.util.Locale.US,
+                    "flyToCity(%f, %f, '%s', '%s');", lat, lng, n, d));
+            updateOverlay(name, desc);
+        } else {
+            // Map belum siap, simpan sebagai pending
+            pendingLat = lat;
+            pendingLon = lng;
+            pendingName = name;
+            pendingDesc = desc;
+        }
+    }
+
+    private void fetchAndUpdateOverlay() {
+        AppState state = AppState.getInstance();
+        double lat = state.getLat();
+        double lon = state.getLon();
+
+        Task<CurrentWeather> task = new Task<>() {
+            @Override
+            protected CurrentWeather call() throws Exception {
+                return weatherService.getCurrentWeather(lat, lon);
+            }
+        };
+        task.setOnSucceeded(e -> {
+            CurrentWeather w = task.getValue();
+            String city = w.getCityName() + ", " + w.getCountry();
+            String cond = capitalize(w.getCondition()) + " · " + (int) w.getTemperature() + "°C";
+            updateOverlay(city, cond);
+        });
+        task.setOnFailed(e -> updateOverlay(state.getCityName(), "Gagal memuat cuaca"));
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
     }
 
     @FXML
@@ -219,34 +261,6 @@ public class RadarMapController {
                 + "-fx-cursor: hand; -fx-padding: 8 16 8 12;";
         layerButtons.forEach(b -> b.setStyle(normal));
         activeBtn.setStyle(active);
-    }
-
-    public void flyToCity(double lat, double lng, String name, String desc) {
-        execJS(String.format("flyToCity(%f, %f, '%s', '%s');", lat, lng, name, desc));
-        updateOverlay(name, desc);
-    }
-
-    private void fetchAndUpdateOverlay() {
-        AppState state = AppState.getInstance();
-        double lat = state.getLat();
-        double lon = state.getLon();
-
-        Task<CurrentWeather> task = new Task<>() {
-            @Override
-            protected CurrentWeather call() throws Exception {
-                return weatherService.getCurrentWeather(lat, lon);
-            }
-        };
-        task.setOnSucceeded(e -> {
-            CurrentWeather w = task.getValue();
-            String city = w.getCityName() + ", " + w.getCountry();
-            String cond = capitalize(w.getCondition()) + " · " + (int) w.getTemperature() + "°C";
-            updateOverlay(city, cond);
-        });
-        task.setOnFailed(e -> updateOverlay(state.getCityName(), "Gagal memuat cuaca"));
-        Thread t = new Thread(task);
-        t.setDaemon(true);
-        t.start();
     }
 
     private String capitalize(String s) {

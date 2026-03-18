@@ -42,64 +42,126 @@
         <div id="map"></div>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
-            var map = null;
-            // API Key diisi dari Java via setApiKey()
-            var API_KEY = "";
+            var map           = null;
+            var API_KEY       = "";
             var weatherLayers = {};
-            var simulationCircles = [];
+            var simulationLayers = [];
             var currentMarker = null;
+            var currentLayer  = 'precipitation';
 
-            // Default: Jakarta, Indonesia
-            var DEFAULT_LAT = -6.2088;
-            var DEFAULT_LON = 106.8456;
+            var DEFAULT_LAT  = -6.2088;
+            var DEFAULT_LON  = 106.8456;
             var DEFAULT_CITY = "Jakarta, ID";
 
-            var radarData = {
+            // ── Palette warna per layer ──────────────────────
+            var layerColors = {
                 precipitation: [
-                    [-6.10, 106.75, '#93c5fd', 0.35],
-                    [-6.20, 106.82, '#4ade80', 0.35],
-                    [-6.25, 106.90, '#facc15', 0.35],
-                    [-6.30, 107.00, '#f97316', 0.35],
-                    [-6.15, 106.95, '#ef4444', 0.35],
-                    [-6.35, 106.80, '#4ade80', 0.30]
+                    { threshold: 0.0, color: '#93c5fd' },
+                    { threshold: 0.3, color: '#4ade80' },
+                    { threshold: 0.5, color: '#facc15' },
+                    { threshold: 0.7, color: '#f97316' },
+                    { threshold: 0.9, color: '#ef4444' }
                 ],
                 clouds: [
-                    [-6.05, 106.70, '#93c5fd', 0.30],
-                    [-6.20, 106.84, '#4ade80', 0.30],
-                    [-6.28, 106.92, '#facc15', 0.30],
-                    [-6.32, 107.05, '#93c5fd', 0.25]
+                    { threshold: 0.0, color: '#e0f2fe' },
+                    { threshold: 0.4, color: '#93c5fd' },
+                    { threshold: 0.7, color: '#60a5fa' },
+                    { threshold: 0.9, color: '#3b82f6' }
                 ],
                 wind: [
-                    [-6.08, 106.78, '#facc15', 0.30],
-                    [-6.20, 106.84, '#f97316', 0.35],
-                    [-6.32, 106.88, '#4ade80', 0.30],
-                    [-6.05, 107.00, '#93c5fd', 0.25]
+                    { threshold: 0.0, color: '#d1fae5' },
+                    { threshold: 0.3, color: '#6ee7b7' },
+                    { threshold: 0.6, color: '#facc15' },
+                    { threshold: 0.85, color: '#f97316' }
                 ],
                 temp: [
-                    [-6.05, 106.70, '#ef4444', 0.30],
-                    [-6.20, 106.84, '#facc15', 0.35],
-                    [-6.32, 106.88, '#f97316', 0.40],
-                    [-6.08, 107.00, '#93c5fd', 0.30]
+                    { threshold: 0.0, color: '#93c5fd' },
+                    { threshold: 0.25, color: '#6ee7b7' },
+                    { threshold: 0.5, color: '#facc15' },
+                    { threshold: 0.75, color: '#f97316' },
+                    { threshold: 0.9, color: '#ef4444' }
                 ]
             };
 
+            // ── Pseudo-noise deterministik ────────────────────
+            function pseudoNoise(x, y, seed) {
+                var n = Math.sin(x * 127.1 + y * 311.7 + seed * 74.3) * 43758.5453;
+                return n - Math.floor(n);
+            }
+
+            function getColor(value, palette) {
+                var color = palette[0].color;
+                for (var i = 0; i < palette.length; i++) {
+                    if (value >= palette[i].threshold) color = palette[i].color;
+                }
+                return color;
+            }
+
+            // ── Render heatmap tile grid ──────────────────────
+            function showSimulatedRadar(layerType) {
+                simulationLayers.forEach(function(l) {
+                    if (map && map.hasLayer(l)) map.removeLayer(l);
+                });
+                simulationLayers = [];
+                if (!map) return;
+
+                var palette  = layerColors[layerType] || layerColors.precipitation;
+                var seed     = { precipitation:1, clouds:2, wind:3, temp:4 }[layerType] || 1;
+                var tileSize = 0.045;
+                var gridN    = 20;
+                var startLat = DEFAULT_LAT - (gridN / 2) * tileSize;
+                var startLng = DEFAULT_LON - (gridN / 2) * tileSize;
+
+                for (var row = 0; row < gridN; row++) {
+                    for (var col = 0; col < gridN; col++) {
+                        var tileLat = startLat + row * tileSize;
+                        var tileLng = startLng + col * tileSize;
+
+                        var raw     = pseudoNoise(tileLat, tileLng, seed);
+                        var distLat = (row - gridN / 2) / gridN;
+                        var distLng = (col - gridN / 2) / gridN;
+                        var dist    = Math.sqrt(distLat * distLat + distLng * distLng);
+                        var value   = raw * 0.5 + (1 - dist * 1.8) * 0.5;
+                        value = Math.max(0, Math.min(1, value));
+
+                        if (value < 0.18) continue;
+
+                        var color   = getColor(value, palette);
+                        var opacity = 0.18 + value * 0.38;
+
+                        var rect = L.rectangle(
+                            [[tileLat, tileLng],
+                             [tileLat + tileSize, tileLng + tileSize]],
+                            {
+                                color:       'transparent',
+                                fillColor:   color,
+                                fillOpacity: opacity,
+                                weight:      0,
+                                interactive: false,
+                                smoothFactor: 0
+                            }
+                        );
+                        rect.addTo(map);
+                        simulationLayers.push(rect);
+                    }
+                }
+            }
+
+            // ── Ukuran map ────────────────────────────────────
             function setMapSize() {
                 var mapDiv = document.getElementById('map');
                 mapDiv.style.width  = window.innerWidth  + 'px';
                 mapDiv.style.height = window.innerHeight + 'px';
             }
 
-            /** Dipanggil dari Java: injeksi API key agar tile layer OWM aktif */
+            // ── Inject API key dari Java ──────────────────────
             function setApiKey(key) {
                 API_KEY = key;
-                // Re-init layer OWM jika map sudah ada
                 if (map !== null) {
                     ['precipitation_new','clouds_new','wind_new','temp_new'].forEach(function(name) {
-                        var shortName = name.replace('_new','');
-                        if (weatherLayers[shortName]) {
-                            if (map.hasLayer(weatherLayers[shortName])) {
-                                map.removeLayer(weatherLayers[shortName]);
-                            }
+                        var shortName = name.replace('_new', '');
+                        if (weatherLayers[shortName] && map.hasLayer(weatherLayers[shortName])) {
+                            map.removeLayer(weatherLayers[shortName]);
                         }
                         weatherLayers[shortName] = L.tileLayer(
                             'https://tile.openweathermap.org/map/' + name + '/{z}/{x}/{y}.png?appid=' + API_KEY,
@@ -109,11 +171,11 @@
                 }
             }
 
+            // ── Init peta ─────────────────────────────────────
             function initMap() {
                 setMapSize();
 
                 if (map !== null) {
-                    setMapSize();
                     map.invalidateSize({ animate: false });
                     return;
                 }
@@ -138,9 +200,8 @@
                     attribution: '\u00a9 OpenStreetMap contributors'
                 }).addTo(map);
 
-                // Inisialisasi OWM tile layers
                 ['precipitation_new','clouds_new','wind_new','temp_new'].forEach(function(name) {
-                    var shortName = name.replace('_new','');
+                    var shortName = name.replace('_new', '');
                     weatherLayers[shortName] = L.tileLayer(
                         'https://tile.openweathermap.org/map/' + name + '/{z}/{x}/{y}.png?appid=' + (API_KEY || ''),
                         { opacity: 0.7, maxZoom: 18 }
@@ -153,7 +214,7 @@
                     iconAnchor:[8, 8]
                 });
                 currentMarker = L.marker([DEFAULT_LAT, DEFAULT_LON], { icon: currentIcon })
-                    .bindPopup('<b>' + DEFAULT_CITY + '</b><br>Loading...')
+                    .bindPopup('<b>' + DEFAULT_CITY + '</b><br>Memuat cuaca...')
                     .addTo(map);
 
                 showSimulatedRadar('precipitation');
@@ -164,24 +225,7 @@
                 }, 100);
             }
 
-            function showSimulatedRadar(type) {
-                simulationCircles.forEach(function(c) {
-                    if (map && map.hasLayer(c)) map.removeLayer(c);
-                });
-                simulationCircles = [];
-                var points = radarData[type] || radarData.precipitation;
-                points.forEach(function(p) {
-                    var circle = L.circle([p[0], p[1]], {
-                        radius: 7000,
-                        color: 'transparent',
-                        fillColor: p[2],
-                        fillOpacity: p[3],
-                        interactive: false
-                    }).addTo(map);
-                    simulationCircles.push(circle);
-                });
-            }
-
+            // ── Resize ────────────────────────────────────────
             function onResize(w, h) {
                 var mapDiv = document.getElementById('map');
                 mapDiv.style.width  = w + 'px';
@@ -189,38 +233,47 @@
                 if (map) map.invalidateSize({ animate: false });
             }
 
+            // ── Zoom ──────────────────────────────────────────
             function zoomIn()  { if (map) map.zoomIn(); }
             function zoomOut() { if (map) map.zoomOut(); }
 
+            // ── Kembali ke lokasi aktif ───────────────────────
             function goToCurrentLocation() {
                 if (!map) return;
                 map.flyTo([DEFAULT_LAT, DEFAULT_LON], 12, { animate: true, duration: 1.0 });
                 if (currentMarker) currentMarker.openPopup();
             }
 
+            // ── Ganti layer cuaca ─────────────────────────────
             function setWeatherLayer(layerName) {
+                currentLayer = layerName;
                 if (!map) return;
                 Object.values(weatherLayers).forEach(function(l) {
                     if (map.hasLayer(l)) map.removeLayer(l);
                 });
-                // Gunakan tile OWM jika API key tersedia, fallback ke simulasi
                 if (API_KEY && API_KEY.length > 10 && weatherLayers[layerName]) {
                     weatherLayers[layerName].addTo(map);
                 }
                 showSimulatedRadar(layerName);
             }
 
+            // ── Fly ke kota baru ──────────────────────────────
             function flyToCity(lat, lng, name, desc) {
                 if (!map) return;
                 DEFAULT_LAT  = lat;
                 DEFAULT_LON  = lng;
                 DEFAULT_CITY = name;
+
                 map.flyTo([lat, lng], 12, { animate: true, duration: 1.2 });
+
                 if (currentMarker) {
                     currentMarker.setLatLng([lat, lng]);
                     currentMarker.setPopupContent('<b>' + name + '</b><br>' + desc);
                     currentMarker.openPopup();
                 }
+
+                // Regenerate heatmap tile di lokasi baru
+                showSimulatedRadar(currentLayer || 'precipitation');
             }
         </script>
     </body>
