@@ -1,0 +1,13 @@
+com\weatherwise\App.class
+com\weatherwise\component\WeatherCard.class
+com\weatherwise\component\HourlyCard.class
+com\weatherwise\component\ForecastRowCard.class
+com\weatherwise\component\HumidityBarChart.class
+com\weatherwise\controller\MainWindowController.class
+module-info.class
+com\weatherwise\model\ForecastDay.class
+com\weatherwise\controller\ForecastController.class
+com\weatherwise\controller\RadarMapController.class
+com\weatherwise\controller\SettingsController.class
+com\weatherwise\controller\DashboardController.class
+com\weatherwise\Launcher.class

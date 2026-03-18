@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.web.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.geometry.Insets?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.weatherwise.controller.RadarMapController"
+           maxWidth="Infinity"
+           maxHeight="Infinity">
+
+    <!-- ══ 1. PETA UTAMA ══ -->
+    <WebView fx:id="mapWebView"
+             maxWidth="Infinity"
+             maxHeight="Infinity"/>
+
+    <!-- ══ 2. INFO LOKASI — kiri atas ══ -->
+    <!-- pickOnBounds="false" = hanya area tombol/label yang klik, sisanya tembus ke peta -->
+    <HBox StackPane.alignment="TOP_LEFT"
+          pickOnBounds="false"
+          spacing="12"
+          alignment="CENTER_LEFT"
+          style="-fx-background-color: rgba(255,255,255,0.93);
+                 -fx-background-radius: 14;
+                 -fx-padding: 12 16 12 12;
+                 -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.14),12,0,0,3);"
+          maxWidth="250"
+          maxHeight="68">
+        <StackPane.margin>
+            <Insets top="20" left="20"/>
+        </StackPane.margin>
+
+        <StackPane minWidth="40" minHeight="40"
+                   maxWidth="40" maxHeight="40"
+                   style="-fx-background-color: #2b8cee22;
+                          -fx-background-radius: 10;">
+            <FontIcon iconLiteral="mdi2w-weather-rainy"
+                      iconSize="20" iconColor="#2b8cee"/>
+        </StackPane>
+
+        <VBox spacing="3" alignment="CENTER_LEFT">
+            <Label fx:id="overlayCity" text="San Francisco, CA"
+                   style="-fx-font-size: 13px;
+                          -fx-font-weight: bold;
+                          -fx-text-fill: #0f172a;"/>
+            <Label fx:id="overlayCondition" text="Light Rain · 62°F"
+                   style="-fx-font-size: 11px;
+                          -fx-text-fill: #64748b;"/>
+        </VBox>
+    </HBox>
+
+    <!-- ══ 3. ZOOM CONTROLS — kanan atas ══ -->
+    <VBox StackPane.alignment="TOP_RIGHT"
+          pickOnBounds="false"
+          spacing="8"
+          alignment="TOP_RIGHT">
+        <StackPane.margin>
+            <Insets top="20" right="20"/>
+        </StackPane.margin>
+
+        <VBox spacing="0"
+              maxWidth="44"
+              style="-fx-background-color: white;
+                     -fx-background-radius: 10;
+                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.12),10,0,0,2);">
+
+            <Button onAction="#handleZoomIn"
+                    prefWidth="44" prefHeight="40"
+                    maxWidth="44" maxHeight="40"
+                    style="-fx-background-color: transparent;
+                           -fx-cursor: hand;
+                           -fx-background-radius: 10 10 0 0;
+                           -fx-border-color: transparent transparent #f1f5f9 transparent;
+                           -fx-border-width: 0 0 1 0;">
+                <graphic>
+                    <FontIcon iconLiteral="mdi2p-plus"
+                              iconSize="16" iconColor="#475569"/>
+                </graphic>
+            </Button>
+
+            <Button onAction="#handleZoomOut"
+                    prefWidth="44" prefHeight="40"
+                    maxWidth="44" maxHeight="40"
+                    style="-fx-background-color: transparent;
+                           -fx-cursor: hand;
+                           -fx-background-radius: 0 0 10 10;">
+                <graphic>
+                    <FontIcon iconLiteral="mdi2m-minus"
+                              iconSize="16" iconColor="#475569"/>
+                </graphic>
+            </Button>
+        </VBox>
+
+        <Button onAction="#handleMyLocation"
+                prefWidth="44" prefHeight="44"
+                maxWidth="44" maxHeight="44"
+                style="-fx-background-color: white;
+                       -fx-background-radius: 10;
+                       -fx-cursor: hand;
+                       -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.12),10,0,0,2);">
+            <graphic>
+                <FontIcon iconLiteral="mdi2c-crosshairs-gps"
+                          iconSize="20" iconColor="#2b8cee"/>
+            </graphic>
+        </Button>
+    </VBox>
+
+    <!-- ══ 4. BOTTOM BAR ══ -->
+    <VBox StackPane.alignment="BOTTOM_CENTER"
+          pickOnBounds="false"
+          spacing="10"
+          alignment="BOTTOM_CENTER">
+        <StackPane.margin>
+            <Insets bottom="24" left="24" right="24"/>
+        </StackPane.margin>
+
+        <!-- Layer Buttons -->
+        <HBox spacing="8" alignment="CENTER" pickOnBounds="false">
+            <Button fx:id="btnPrecipitation"
+                    text="Precipitation"
+                    onAction="#handleLayerPrecipitation"
+                    style="-fx-background-color: #2b8cee;
+                           -fx-text-fill: white;
+                           -fx-font-weight: bold;
+                           -fx-font-size: 12px;
+                           -fx-background-radius: 20;
+                           -fx-cursor: hand;
+                           -fx-padding: 8 16 8 12;">
+                <graphic>
+                    <FontIcon iconLiteral="mdi2w-weather-rainy"
+                              iconSize="14" iconColor="white"/>
+                </graphic>
+            </Button>
+            <Button fx:id="btnClouds"
+                    text="Clouds"
+                    onAction="#handleLayerClouds"
+                    style="-fx-background-color: rgba(255,255,255,0.92);
+                           -fx-text-fill: #475569;
+                           -fx-font-size: 12px;
+                           -fx-background-radius: 20;
+                           -fx-cursor: hand;
+                           -fx-padding: 8 16 8 12;
+                           -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.08),6,0,0,1);">
+                <graphic>
+                    <FontIcon iconLiteral="mdi2w-weather-cloudy"
+                              iconSize="14" iconColor="#475569"/>
+                </graphic>
+            </Button>
+            <Button fx:id="btnWind"
+                    text="Wind"
+                    onAction="#handleLayerWind"
+                    style="-fx-background-color: rgba(255,255,255,0.92);
+                           -fx-text-fill: #475569;
+                           -fx-font-size: 12px;
+                           -fx-background-radius: 20;
+                           -fx-cursor: hand;
+                           -fx-padding: 8 16 8 12;
+                           -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.08),6,0,0,1);">
+                <graphic>
+                    <FontIcon iconLiteral="mdi2w-weather-windy"
+                              iconSize="14" iconColor="#475569"/>
+                </graphic>
+            </Button>
+            <Button fx:id="btnTemp"
+                    text="Temperature"
+                    onAction="#handleLayerTemp"
+                    style="-fx-background-color: rgba(255,255,255,0.92);
+                           -fx-text-fill: #475569;
+                           -fx-font-size: 12px;
+                           -fx-background-radius: 20;
+                           -fx-cursor: hand;
+                           -fx-padding: 8 16 8 12;
+                           -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.08),6,0,0,1);">
+                <graphic>
+                    <FontIcon iconLiteral="mdi2t-thermometer"
+                              iconSize="14" iconColor="#475569"/>
+                </graphic>
+            </Button>
+        </HBox>
+
+        <!-- Intensity Legend -->
+        <HBox alignment="CENTER" pickOnBounds="false"
+              style="-fx-background-color: rgba(255,255,255,0.95);
+                     -fx-background-radius: 16;
+                     -fx-padding: 10 20 10 20;
+                     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.10),14,0,0,3);">
+            <Label text="Intensity"
+                   style="-fx-font-size: 11px; -fx-font-weight: bold;
+                          -fx-text-fill: #94a3b8; -fx-padding: 0 14 0 0;"/>
+            <HBox spacing="14" alignment="CENTER" HBox.hgrow="ALWAYS">
+                <VBox alignment="CENTER" spacing="2">
+                    <Label text="●" style="-fx-text-fill: #93c5fd; -fx-font-size: 20px;"/>
+                    <Label text="Light" style="-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="2">
+                    <Label text="●" style="-fx-text-fill: #4ade80; -fx-font-size: 20px;"/>
+                    <Label text="Moderate" style="-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="2">
+                    <Label text="●" style="-fx-text-fill: #facc15; -fx-font-size: 20px;"/>
+                    <Label text="Heavy" style="-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="2">
+                    <Label text="●" style="-fx-text-fill: #f97316; -fx-font-size: 20px;"/>
+                    <Label text="Very Heavy" style="-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;"/>
+                </VBox>
+                <VBox alignment="CENTER" spacing="2">
+                    <Label text="●" style="-fx-text-fill: #ef4444; -fx-font-size: 20px;"/>
+                    <Label text="Extreme" style="-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;"/>
+                </VBox>
+            </HBox>
+            <HBox spacing="4" alignment="CENTER"
+                  style="-fx-padding: 0 0 0 14;
+                         -fx-border-color: transparent transparent transparent #e2e8f0;
+                         -fx-border-width: 0 0 0 1;">
+                <Button onAction="#handleLayers" prefWidth="34" prefHeight="34"
+                        style="-fx-background-color: #f8fafc; -fx-background-radius: 8; -fx-cursor: hand;">
+                    <graphic><FontIcon iconLiteral="mdi2l-layers-outline" iconSize="16" iconColor="#475569"/></graphic>
+                </Button>
+                <Button onAction="#handleShare" prefWidth="34" prefHeight="34"
+                        style="-fx-background-color: #f8fafc; -fx-background-radius: 8; -fx-cursor: hand;">
+                    <graphic><FontIcon iconLiteral="mdi2s-share-variant" iconSize="16" iconColor="#475569"/></graphic>
+                </Button>
+            </HBox>
+        </HBox>
+    </VBox>
+
+</StackPane>

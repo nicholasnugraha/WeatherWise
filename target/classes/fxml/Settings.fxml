@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.weatherwise.controller.SettingsController"
+      alignment="CENTER" spacing="16"
+      style="-fx-background-color: #f6f7f8; -fx-padding: 40;">
+    <FontIcon iconLiteral="mdi2c-cog-outline" iconSize="64" iconColor="#64748b"/>
+    <Label text="Settings" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+    <Label text="Halaman ini akan diisi di Fase 6" style="-fx-text-fill: #64748b;"/>
+</VBox>

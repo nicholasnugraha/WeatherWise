@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.weatherwise.controller.ForecastController"
+            fitToWidth="true"
+            style="-fx-background-color: #f6f7f8;
+                   -fx-background: #f6f7f8;
+                   -fx-border-width: 0;">
+
+    <VBox spacing="24" style="-fx-padding: 32 36 32 36;
+                               -fx-background-color: #f6f7f8;">
+
+        <!-- ============ HEADER ============ -->
+        <HBox alignment="CENTER_LEFT">
+
+            <!-- Judul + Lokasi -->
+            <VBox spacing="6" HBox.hgrow="ALWAYS">
+                <Label text="7-Day Forecast"
+                       style="-fx-font-size: 30px;
+                              -fx-font-weight: 900;
+                              -fx-text-fill: #0f172a;"/>
+                <HBox alignment="CENTER_LEFT" spacing="6">
+                    <FontIcon iconLiteral="mdi2m-map-marker"
+                              iconSize="14" iconColor="#2b8cee"/>
+                    <Label text="San Francisco, CA"
+                           style="-fx-font-size: 13px;
+                                  -fx-font-weight: 600;
+                                  -fx-text-fill: #2b8cee;"/>
+                </HBox>
+            </VBox>
+
+            <!-- Toggle Celsius / Fahrenheit -->
+            <HBox fx:id="unitToggle" spacing="0"
+                  alignment="CENTER"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 10;
+                         -fx-border-color: #e2e8f0;
+                         -fx-border-radius: 10;
+                         -fx-border-width: 1;
+                         -fx-padding: 4;">
+                <Button fx:id="btnCelsius" text="°C"
+                        onAction="#handleCelsius"
+                        style="-fx-background-color: #2b8cee;
+                               -fx-text-fill: white;
+                               -fx-font-weight: bold;
+                               -fx-font-size: 13px;
+                               -fx-background-radius: 7;
+                               -fx-cursor: hand;
+                               -fx-pref-width: 48;
+                               -fx-pref-height: 32;"/>
+                <Button fx:id="btnFahrenheit" text="°F"
+                        onAction="#handleFahrenheit"
+                        style="-fx-background-color: transparent;
+                               -fx-text-fill: #64748b;
+                               -fx-font-weight: bold;
+                               -fx-font-size: 13px;
+                               -fx-background-radius: 7;
+                               -fx-cursor: hand;
+                               -fx-pref-width: 48;
+                               -fx-pref-height: 32;"/>
+            </HBox>
+
+        </HBox>
+
+        <!-- ============ DAFTAR 7 HARI ============ -->
+        <VBox fx:id="forecastList" spacing="10"/>
+
+        <!-- ============ BOTTOM: HUMIDITY + RADAR ============ -->
+        <HBox spacing="16">
+
+            <!-- Weekly Humidity Chart -->
+            <VBox spacing="14" HBox.hgrow="ALWAYS"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 14;
+                         -fx-padding: 20;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <FontIcon iconLiteral="mdi2c-chart-bar"
+                              iconSize="18" iconColor="#2b8cee"/>
+                    <Label text="Weekly Humidity"
+                           style="-fx-font-size: 14px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #0f172a;"/>
+                </HBox>
+                <Pane fx:id="humidityChartContainer"
+                      prefHeight="120"
+                      style="-fx-background-color: transparent;"/>
+            </VBox>
+
+            <!-- Local Radar Preview -->
+            <VBox spacing="14" HBox.hgrow="ALWAYS"
+                  style="-fx-background-color: white;
+                         -fx-background-radius: 14;
+                         -fx-padding: 20;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.06), 10, 0, 0, 2);">
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <FontIcon iconLiteral="mdi2r-radar"
+                              iconSize="18" iconColor="#2b8cee"/>
+                    <Label text="Local Radar"
+                           style="-fx-font-size: 14px;
+                                  -fx-font-weight: bold;
+                                  -fx-text-fill: #0f172a;"/>
+                </HBox>
+
+                <!-- Radar simulasi -->
+                <StackPane prefHeight="120"
+                           style="-fx-background-color: #f1f5f9;
+                                  -fx-background-radius: 10;">
+                    <FontIcon iconLiteral="mdi2r-radar"
+                              iconSize="56"
+                              iconColor="#2b8cee44"/>
+                    <Label text="Interactive map →"
+                           style="-fx-font-size: 11px;
+                                  -fx-text-fill: #94a3b8;
+                                  -fx-padding: 80 0 0 0;"/>
+                </StackPane>
+
+                <Button text="Open Interactive Map"
+                        onAction="#handleOpenMap"
+                        maxWidth="Infinity"
+                        style="-fx-background-color: transparent;
+                               -fx-text-fill: #2b8cee;
+                               -fx-font-weight: bold;
+                               -fx-font-size: 12px;
+                               -fx-border-color: #2b8cee44;
+                               -fx-border-radius: 8;
+                               -fx-border-width: 1.5;
+                               -fx-background-radius: 8;
+                               -fx-cursor: hand;
+                               -fx-padding: 8;"/>
+            </VBox>
+
+        </HBox>
+
+    </VBox>
+</ScrollPane>

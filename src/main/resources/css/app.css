@@ -1,0 +1,45 @@
+/* Warna tema dari prototype kamu */
+.root {
+    -fx-font-family: "Inter", "Segoe UI", sans-serif;
+    /* Warna utama biru #2b8cee */
+    -color-accent-fg: #2b8cee;
+    -color-accent-emphasis: #2b8cee;
+}
+
+/* Background light: #f6f7f8 */
+.bg-light {
+    -fx-background-color: #f6f7f8;
+}
+
+/* Background dark: #101922 */
+.bg-dark {
+    -fx-background-color: #101922;
+}
+
+/* Top Nav Button - Normal */
+.nav-top {
+    -fx-background-color: transparent;
+    -fx-text-fill: #64748b;
+    -fx-font-size: 13px;
+    -fx-font-weight: normal;
+    -fx-cursor: hand;
+    -fx-border-width: 0;
+    -fx-padding: 6 4 4 4;
+}
+
+.nav-top:hover {
+    -fx-text-fill: #2b8cee;
+}
+
+/* Top Nav Button - Aktif */
+.nav-top-active {
+    -fx-background-color: transparent;
+    -fx-text-fill: #2b8cee;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-border-color: transparent transparent #2b8cee transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 6 4 4 4;
+}
+

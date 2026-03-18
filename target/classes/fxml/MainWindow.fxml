@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.weatherwise.controller.MainWindowController"
+            prefWidth="1280" prefHeight="800"
+            style="-fx-background-color: #f6f7f8;">
+    
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="0"
+              style="-fx-background-color: white;
+                     -fx-border-color: #e2e8f0;
+                     -fx-border-width: 0 0 1 0;
+                     -fx-padding: 12 24 12 24;">
+
+            <!-- Logo -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <FontIcon iconLiteral="mdi2w-weather-cloudy-clock"
+                          iconSize="28"
+                          iconColor="#2b8cee"/>
+                <Label text="WeatherWise"
+                       style="-fx-font-size: 17px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #0f172a;"/>
+            </HBox>
+
+            <!-- Nav Links Tengah -->
+            <HBox alignment="CENTER" spacing="28"
+                  HBox.hgrow="ALWAYS"
+                  style="-fx-padding: 0 0 0 48;">
+                <Button fx:id="navDashboard" text="Dashboard"
+                        onAction="#handleNavDashboard"
+                        styleClass="nav-top-active"
+                        style="-fx-cursor: hand;"/>
+                <Button fx:id="navMaps" text="Maps"
+                        onAction="#handleNavMaps"
+                        styleClass="nav-top"
+                        style="-fx-cursor: hand;"/>
+                <Button fx:id="navForecast" text="Forecast"
+                        onAction="#handleNavForecast"
+                        styleClass="nav-top"
+                        style="-fx-cursor: hand;"/>
+                <Button fx:id="navSettings" text="Settings"
+                        onAction="#handleNavSettings"
+                        styleClass="nav-top"
+                        style="-fx-cursor: hand;"/>
+            </HBox>
+
+            <!-- Search Bar + Icon Kanan -->
+            <HBox alignment="CENTER_RIGHT" spacing="12"
+                  HBox.hgrow="ALWAYS">
+                <!-- Search -->
+                <HBox alignment="CENTER_LEFT" spacing="8"
+                      style="-fx-background-color: #f1f5f9;
+                             -fx-background-radius: 8;
+                             -fx-padding: 8 14 8 14;
+                             -fx-pref-width: 220;">
+                    <FontIcon iconLiteral="mdi2m-magnify"
+                              iconSize="18"
+                              iconColor="#94a3b8"/>
+                    <TextField fx:id="searchField"
+                               promptText="Search city..."
+                               style="-fx-background-color: transparent;
+                                      -fx-border-width: 0;
+                                      -fx-font-size: 13px;
+                                      -fx-pref-width: 160;"/>
+                </HBox>
+
+                <!-- Icon Notifikasi -->
+                <Button onAction="#handleNotification"
+                        style="-fx-background-color: #f1f5f9;
+                               -fx-background-radius: 8;
+                               -fx-cursor: hand;
+                               -fx-padding: 8;">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2b-bell-outline"
+                                  iconSize="20"
+                                  iconColor="#475569"/>
+                    </graphic>
+                </Button>
+
+                <!-- Icon Profil -->
+                <Button style="-fx-background-color: #2b8cee22;
+                               -fx-background-radius: 20;
+                               -fx-cursor: hand;
+                               -fx-padding: 8;">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2a-account-circle"
+                                  iconSize="22"
+                                  iconColor="#2b8cee"/>
+                    </graphic>
+                </Button>
+            </HBox>
+
+        </HBox>
+    </top>
+    
+    <center>
+        <HBox>
+
+            <!-- SIDEBAR KIRI -->
+            <VBox spacing="4" alignment="TOP_CENTER"
+                  style="-fx-background-color: white;
+                         -fx-border-color: #e2e8f0;
+                         -fx-border-width: 0 1 0 0;
+                         -fx-pref-width: 220;
+                         -fx-min-width: 220;
+                         -fx-padding: 24 12 24 12;">
+
+                <!-- Label Section -->
+                <Label text="MENU"
+                       style="-fx-font-size: 10px;
+                              -fx-font-weight: bold;
+                              -fx-text-fill: #94a3b8;
+                              -fx-padding: 0 0 8 8;"/>
+
+                <!-- Nav Item: Dashboard -->
+                <Button fx:id="sidebarDashboard"
+                        text="  Dashboard"
+                        maxWidth="Infinity"
+                        alignment="CENTER_LEFT"
+                        onAction="#handleNavDashboard"
+                        styleClass="nav-item-active">
+                    <graphic>
+                        <FontIcon fx:id="iconDashboard"
+                                  iconLiteral="mdi2v-view-dashboard"
+                                  iconSize="20"
+                                  iconColor="#2b8cee"/>
+                    </graphic>
+                </Button>
+
+                <!-- Nav Item: Maps -->
+                <Button fx:id="sidebarMaps"
+                        text="  Maps"
+                        maxWidth="Infinity"
+                        alignment="CENTER_LEFT"
+                        onAction="#handleNavMaps"
+                        styleClass="nav-item">
+                    <graphic>
+                        <FontIcon fx:id="iconMaps"
+                                  iconLiteral="mdi2m-map"
+                                  iconSize="20"
+                                  iconColor="#64748b"/>
+                    </graphic>
+                </Button>
+
+                <!-- Nav Item: Forecast -->
+                <Button fx:id="sidebarForecast"
+                        text="  Forecast"
+                        maxWidth="Infinity"
+                        alignment="CENTER_LEFT"
+                        onAction="#handleNavForecast"
+                        styleClass="nav-item">
+                    <graphic>
+                        <FontIcon fx:id="iconForecast"
+                                  iconLiteral="mdi2c-calendar-week"
+                                  iconSize="20"
+                                  iconColor="#64748b"/>
+                    </graphic>
+                </Button>
+
+                <!-- Nav Item: Settings -->
+                <Button fx:id="sidebarSettings"
+                        text="  Settings"
+                        maxWidth="Infinity"
+                        alignment="CENTER_LEFT"
+                        onAction="#handleNavSettings"
+                        styleClass="nav-item">
+                    <graphic>
+                        <FontIcon fx:id="iconSettings"
+                                  iconLiteral="mdi2c-cog-outline"
+                                  iconSize="20"
+                                  iconColor="#64748b"/>
+                    </graphic>
+                </Button>
+
+                <!-- Spacer dorong Sign Out ke bawah -->
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <!-- Sign Out -->
+                <Button text="  Sign Out"
+                        maxWidth="Infinity"
+                        alignment="CENTER_LEFT"
+                        onAction="#handleSignOut"
+                        style="-fx-background-color: transparent;
+                               -fx-text-fill: #94a3b8;
+                               -fx-font-size: 13px;
+                               -fx-cursor: hand;
+                               -fx-padding: 10 14 10 14;
+                               -fx-background-radius: 8;">
+                    <graphic>
+                        <FontIcon iconLiteral="mdi2l-logout"
+                                  iconSize="20"
+                                  iconColor="#94a3b8"/>
+                    </graphic>
+                </Button>
+
+            </VBox>
+
+            <!-- AREA KONTEN UTAMA (berganti tiap klik nav) -->
+            <StackPane fx:id="contentArea"
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-background-color: #f6f7f8;"/>
+
+        </HBox>
+    </center>
+    
+</BorderPane>

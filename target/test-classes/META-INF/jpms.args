@@ -1,0 +1,4 @@
+--patch-module
+com.weatherwise=_
+--add-reads
+com.weatherwise=ALL-UNNAMED
