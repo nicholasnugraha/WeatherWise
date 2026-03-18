@@ -14,6 +14,11 @@
 
     <VBox spacing="28" style="-fx-padding: 32 36 32 36; -fx-background-color: #f6f7f8;">
 
+        <!-- Status label (loading / error) -->
+        <Label fx:id="labelStatus" text=""
+               visible="false"
+               style="-fx-font-size: 13px; -fx-text-fill: #64748b;"/>
+
         <!-- ===================== HERO SECTION ===================== -->
         <HBox spacing="24" alignment="CENTER_LEFT">
 
@@ -24,28 +29,27 @@
                 <HBox alignment="CENTER_LEFT" spacing="6">
                     <FontIcon iconLiteral="mdi2m-map-marker"
                               iconSize="16" iconColor="#2b8cee"/>
-                    <Label fx:id="locationLabel"
-                           text="San Francisco, CA"
+                    <Label fx:id="labelCity"
+                           text="Memuat..."
                            style="-fx-font-size: 13px;
                                   -fx-font-weight: 600;
-                                  -fx-text-fill: #2b8cee;
-                                  -fx-text-transform: uppercase;"/>
+                                  -fx-text-fill: #2b8cee;"/>
                 </HBox>
 
                 <!-- Tanggal -->
-                <Label fx:id="dateLabel"
-                       text="Monday, October 23, 2023"
+                <Label fx:id="labelDate"
+                       text=""
                        style="-fx-font-size: 13px;
                               -fx-text-fill: #94a3b8;"/>
 
                 <!-- Suhu Besar + Icon -->
                 <HBox alignment="CENTER_LEFT" spacing="20">
                     <HBox alignment="BASELINE_LEFT" spacing="4">
-                        <Label fx:id="tempLabel" text="72"
+                        <Label fx:id="labelTemp" text="--"
                                style="-fx-font-size: 88px;
                                       -fx-font-weight: 900;
                                       -fx-text-fill: #0f172a;"/>
-                        <Label text="°F"
+                        <Label text="°C"
                                style="-fx-font-size: 36px;
                                       -fx-font-weight: 700;
                                       -fx-text-fill: #2b8cee;
@@ -53,11 +57,11 @@
                     </HBox>
 
                     <VBox alignment="CENTER" spacing="6">
-                        <FontIcon fx:id="mainWeatherIcon"
+                        <FontIcon fx:id="iconWeather"
                                   iconLiteral="mdi2w-weather-sunny"
                                   iconSize="72"
                                   iconColor="#f59e0b"/>
-                        <Label fx:id="conditionLabel" text="Sunny"
+                        <Label fx:id="labelCondition" text="--"
                                style="-fx-font-size: 15px;
                                       -fx-font-weight: bold;
                                       -fx-text-fill: #475569;"/>
@@ -69,7 +73,7 @@
                     <HBox spacing="4" alignment="CENTER_LEFT">
                         <FontIcon iconLiteral="mdi2a-arrow-up-thick"
                                   iconSize="14" iconColor="#94a3b8"/>
-                        <Label fx:id="highLabel" text="78°"
+                        <Label fx:id="labelHigh" text="--°"
                                style="-fx-font-weight: bold;
                                       -fx-text-fill: #64748b;
                                       -fx-font-size: 13px;"/>
@@ -77,36 +81,17 @@
                     <HBox spacing="4" alignment="CENTER_LEFT">
                         <FontIcon iconLiteral="mdi2a-arrow-down-thick"
                                   iconSize="14" iconColor="#94a3b8"/>
-                        <Label fx:id="lowLabel" text="62°"
+                        <Label fx:id="labelLow" text="--°"
                                style="-fx-font-weight: bold;
                                       -fx-text-fill: #64748b;
                                       -fx-font-size: 13px;"/>
                     </HBox>
                     <Label text="|" style="-fx-text-fill: #e2e8f0;"/>
-                    <Label fx:id="feelsLikeLabel" text="Feels like 74°F"
+                    <Label fx:id="labelFeelsLike" text="Feels like --°C"
                            style="-fx-text-fill: #64748b;
                                   -fx-font-size: 13px;"/>
                 </HBox>
 
-            </VBox>
-
-            <!-- Kanan: Live Satellite Card -->
-            <VBox alignment="CENTER"
-                  style="-fx-background-color: #1e293b;
-                         -fx-background-radius: 18;
-                         -fx-pref-width: 280;
-                         -fx-pref-height: 200;
-                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 16, 0, 0, 4);">
-                <FontIcon iconLiteral="mdi2s-satellite-variant"
-                          iconSize="48" iconColor="#2b8cee"/>
-                <Label text="Live Satellite"
-                       style="-fx-font-size: 13px;
-                              -fx-font-weight: bold;
-                              -fx-text-fill: white;
-                              -fx-padding: 10 0 0 0;"/>
-                <Label text="San Francisco, CA"
-                       style="-fx-font-size: 11px;
-                              -fx-text-fill: #94a3b8;"/>
             </VBox>
 
         </HBox>
@@ -130,7 +115,6 @@
                                -fx-border-width: 0;"/>
             </HBox>
 
-            <!-- Scroll horizontal kartu per jam -->
             <ScrollPane hbarPolicy="AS_NEEDED" vbarPolicy="NEVER"
                         fitToHeight="true"
                         style="-fx-background-color: transparent;
@@ -153,7 +137,6 @@
                               -fx-text-fill: #0f172a;"/>
             </HBox>
 
-            <!-- Grid 4 kartu detail -->
             <HBox fx:id="detailContainer" spacing="16"
                   alignment="CENTER_LEFT"/>
         </VBox>
@@ -172,7 +155,6 @@
                               -fx-font-weight: bold;
                               -fx-text-fill: #0f172a;"/>
             </HBox>
-            <!-- Canvas chart diisi dari controller -->
             <Pane fx:id="humidityChartContainer"
                   prefHeight="130"
                   style="-fx-background-color: transparent;"/>

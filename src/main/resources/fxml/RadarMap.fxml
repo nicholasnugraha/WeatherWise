@@ -44,11 +44,11 @@
         </StackPane>
 
         <VBox spacing="3" alignment="CENTER_LEFT">
-            <Label fx:id="overlayCity" text="San Francisco, CA"
+            <Label fx:id="overlayCity" text="Jakarta, ID"
                    style="-fx-font-size: 13px;
                           -fx-font-weight: bold;
                           -fx-text-fill: #0f172a;"/>
-            <Label fx:id="overlayCondition" text="Light Rain · 62°F"
+            <Label fx:id="overlayCondition" text="Memuat cuaca..."
                    style="-fx-font-size: 11px;
                           -fx-text-fill: #64748b;"/>
         </VBox>

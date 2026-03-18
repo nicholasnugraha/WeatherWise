@@ -1,9 +1,0 @@
-# Salin file ini menjadi config.properties lalu isi API Key kamu
-# JANGAN commit config.properties ke Git! File ini sudah ada di .gitignore
-#
-# Cara mendapatkan API Key:
-# 1. Daftar/login ke https://openweathermap.org
-# 2. Buka https://home.openweathermap.org/api_keys
-# 3. Generate key baru, lalu salin ke sini
-
-owm.api.key=MASUKKAN_API_KEY_KAMU_DI_SINI

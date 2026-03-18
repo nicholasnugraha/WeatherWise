@@ -11,7 +11,7 @@
             style="-fx-background-color: #f6f7f8;">
     
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="0"
+        <HBox fx:id="topNavBar" alignment="CENTER_LEFT" spacing="0"
               style="-fx-background-color: white;
                      -fx-border-color: #e2e8f0;
                      -fx-border-width: 0 0 1 0;
@@ -78,7 +78,7 @@
         <HBox>
 
             <!-- SIDEBAR KIRI -->
-            <VBox spacing="4" alignment="TOP_CENTER"
+            <VBox fx:id="sidebarPanel" spacing="4" alignment="TOP_CENTER"
                   style="-fx-background-color: white;
                          -fx-border-color: #e2e8f0;
                          -fx-border-width: 0 1 0 0;

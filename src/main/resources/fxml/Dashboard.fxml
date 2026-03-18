@@ -94,25 +94,6 @@
 
             </VBox>
 
-            <!-- Kanan: Live Satellite Card -->
-            <VBox alignment="CENTER"
-                  style="-fx-background-color: #1e293b;
-                         -fx-background-radius: 18;
-                         -fx-pref-width: 280;
-                         -fx-pref-height: 200;
-                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 16, 0, 4);">
-                <FontIcon iconLiteral="mdi2s-satellite-variant"
-                          iconSize="48" iconColor="#2b8cee"/>
-                <Label text="Live Satellite"
-                       style="-fx-font-size: 13px;
-                              -fx-font-weight: bold;
-                              -fx-text-fill: white;
-                              -fx-padding: 10 0 0 0;"/>
-                <Label fx:id="labelSatelliteCity" text="--"
-                       style="-fx-font-size: 11px;
-                              -fx-text-fill: #94a3b8;"/>
-            </VBox>
-
         </HBox>
 
         <!-- ===================== HOURLY FORECAST ===================== -->

@@ -34,7 +34,6 @@
             <!-- ── KOLOM KIRI: Lokasi ── -->
             <VBox spacing="16" HBox.hgrow="ALWAYS" maxWidth="Infinity">
 
-                <!-- Judul -->
                 <Label text="Lokasi"
                        style="-fx-font-size: 18px; -fx-font-weight: bold;
                               -fx-text-fill: #0f172a;"/>
@@ -78,124 +77,19 @@
                     </Button>
                 </HBox>
 
-                <!-- Label Pinned -->
-                <Label text="LOKASI TERSIMPAN"
-                       style="-fx-font-size: 10px; -fx-font-weight: bold;
-                              -fx-text-fill: #94a3b8;
-                              -fx-padding: 8 0 0 0;"/>
+                <!-- Status pencarian -->
+                <Label fx:id="labelSearchStatus" text=""
+                       visible="false"
+                       style="-fx-font-size: 12px; -fx-text-fill: #64748b;"/>
 
-                <!-- Card Lokasi 1 -->
-                <HBox alignment="CENTER_LEFT" spacing="14"
-                      style="-fx-background-color: white;
-                             -fx-background-radius: 14;
-                             -fx-padding: 14 16 14 16;
-                             -fx-border-color: transparent;
-                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),10,0,0,2);">
-                    <StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48"
-                               style="-fx-background-color: #eff6ff;
-                                      -fx-background-radius: 10;">
-                        <FontIcon iconLiteral="mdi2w-weather-cloudy"
-                                  iconSize="22" iconColor="#2b8cee"/>
-                    </StackPane>
-                    <VBox spacing="3" HBox.hgrow="ALWAYS">
-                        <Label text="London, UK"
-                               style="-fx-font-size: 14px; -fx-font-weight: bold;
-                                      -fx-text-fill: #0f172a;"/>
-                        <Label text="Mostly Cloudy · 10:24 AM"
-                               style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
-                    </VBox>
-                    <VBox alignment="CENTER_RIGHT" spacing="2">
-                        <Label text="12°C"
-                               style="-fx-font-size: 20px; -fx-font-weight: bold;
-                                      -fx-text-fill: #0f172a;"/>
-                        <Label text="H14 · L8"
-                               style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/>
-                    </VBox>
-                    <Button style="-fx-background-color: transparent;
-                                   -fx-cursor: hand; -fx-padding: 4;">
-                        <graphic>
-                            <FontIcon iconLiteral="mdi2d-delete-outline"
-                                      iconSize="18" iconColor="#cbd5e1"/>
-                        </graphic>
-                    </Button>
-                </HBox>
-
-                <!-- Card Lokasi 2 -->
-                <HBox alignment="CENTER_LEFT" spacing="14"
-                      style="-fx-background-color: white;
-                             -fx-background-radius: 14;
-                             -fx-padding: 14 16 14 16;
-                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),10,0,0,2);">
-                    <StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48"
-                               style="-fx-background-color: #fff7ed;
-                                      -fx-background-radius: 10;">
-                        <FontIcon iconLiteral="mdi2w-weather-sunny"
-                                  iconSize="22" iconColor="#f97316"/>
-                    </StackPane>
-                    <VBox spacing="3" HBox.hgrow="ALWAYS">
-                        <Label text="Los Angeles, US"
-                               style="-fx-font-size: 14px; -fx-font-weight: bold;
-                                      -fx-text-fill: #0f172a;"/>
-                        <Label text="Sunny · 02:24 AM"
-                               style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
-                    </VBox>
-                    <VBox alignment="CENTER_RIGHT" spacing="2">
-                        <Label text="24°C"
-                               style="-fx-font-size: 20px; -fx-font-weight: bold;
-                                      -fx-text-fill: #0f172a;"/>
-                        <Label text="H28 · L19"
-                               style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/>
-                    </VBox>
-                    <Button style="-fx-background-color: transparent;
-                                   -fx-cursor: hand; -fx-padding: 4;">
-                        <graphic>
-                            <FontIcon iconLiteral="mdi2d-delete-outline"
-                                      iconSize="18" iconColor="#cbd5e1"/>
-                        </graphic>
-                    </Button>
-                </HBox>
-
-                <!-- Card Lokasi 3 -->
-                <HBox alignment="CENTER_LEFT" spacing="14"
-                      style="-fx-background-color: white;
-                             -fx-background-radius: 14;
-                             -fx-padding: 14 16 14 16;
-                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),10,0,0,2);">
-                    <StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48"
-                               style="-fx-background-color: #eff6ff;
-                                      -fx-background-radius: 10;">
-                        <FontIcon iconLiteral="mdi2w-weather-rainy"
-                                  iconSize="22" iconColor="#2b8cee"/>
-                    </StackPane>
-                    <VBox spacing="3" HBox.hgrow="ALWAYS">
-                        <Label text="Tokyo, JP"
-                               style="-fx-font-size: 14px; -fx-font-weight: bold;
-                                      -fx-text-fill: #0f172a;"/>
-                        <Label text="Light Rain · 06:24 PM"
-                               style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
-                    </VBox>
-                    <VBox alignment="CENTER_RIGHT" spacing="2">
-                        <Label text="18°C"
-                               style="-fx-font-size: 20px; -fx-font-weight: bold;
-                                      -fx-text-fill: #0f172a;"/>
-                        <Label text="H20 · L16"
-                               style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/>
-                    </VBox>
-                    <Button style="-fx-background-color: transparent;
-                                   -fx-cursor: hand; -fx-padding: 4;">
-                        <graphic>
-                            <FontIcon iconLiteral="mdi2d-delete-outline"
-                                      iconSize="18" iconColor="#cbd5e1"/>
-                        </graphic>
-                    </Button>
-                </HBox>
+                <!-- Hasil pencarian (diisi controller) -->
+                <VBox fx:id="locationListContainer" spacing="8"/>
 
             </VBox>
 
             <!-- ── KOLOM KANAN: Settings ── -->
             <VBox spacing="16" prefWidth="380" minWidth="340">
 
-                <!-- Judul -->
                 <Label text="Pengaturan"
                        style="-fx-font-size: 18px; -fx-font-weight: bold;
                               -fx-text-fill: #0f172a;"/>
@@ -313,7 +207,6 @@
 
                     <Separator style="-fx-background-color: #f1f5f9;"/>
 
-
                     <!-- ─ Tampilan ─ -->
                     <VBox spacing="14"
                           style="-fx-padding: 20 20 20 20;">
@@ -331,7 +224,6 @@
                         </HBox>
 
                         <HBox spacing="10">
-                            <!-- Light -->
                             <Button fx:id="btnThemeLight" onAction="#handleThemeLight"
                                     prefWidth="100" prefHeight="72"
                                     style="-fx-background-color: #eff6ff;
@@ -349,7 +241,6 @@
                                     </VBox>
                                 </graphic>
                             </Button>
-                            <!-- Dark -->
                             <Button fx:id="btnThemeDark" onAction="#handleThemeDark"
                                     prefWidth="100" prefHeight="72"
                                     style="-fx-background-color: #f1f5f9;
@@ -367,7 +258,6 @@
                                     </VBox>
                                 </graphic>
                             </Button>
-                            <!-- System -->
                             <Button fx:id="btnThemeSystem" onAction="#handleThemeSystem"
                                     prefWidth="100" prefHeight="72"
                                     style="-fx-background-color: #f1f5f9;

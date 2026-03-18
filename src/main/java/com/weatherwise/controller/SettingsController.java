@@ -3,6 +3,8 @@ package com.weatherwise.controller;
 import com.weatherwise.model.Location;
 import com.weatherwise.service.GeocodingService;
 import com.weatherwise.service.WeatherService;
+import com.weatherwise.util.AppState;
+import com.weatherwise.util.ThemeManager;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
@@ -15,34 +17,48 @@ import java.util.List;
 public class SettingsController {
 
     // ── Location ──────────────────────────────────────────────
-    @FXML private TextField searchField;
-    @FXML private VBox      locationListContainer;
+    @FXML
+    private TextField searchField;
+    @FXML
+    private VBox locationListContainer;
 
     // ── Units ─────────────────────────────────────────────────
-    @FXML private Button btnCelsius;
-    @FXML private Button btnFahrenheit;
-    @FXML private Button btnKmh;
-    @FXML private Button btnMph;
-    @FXML private Button btnHpa;
-    @FXML private Button btnInhg;
+    @FXML
+    private Button btnCelsius;
+    @FXML
+    private Button btnFahrenheit;
+    @FXML
+    private Button btnKmh;
+    @FXML
+    private Button btnMph;
+    @FXML
+    private Button btnHpa;
+    @FXML
+    private Button btnInhg;
 
     // ── Notifications ─────────────────────────────────────────
-    @FXML private ToggleButton toggleSevere;
-    @FXML private ToggleButton toggleDailyBriefing;
+    @FXML
+    private ToggleButton toggleSevere;
+    @FXML
+    private ToggleButton toggleDailyBriefing;
 
     // ── Appearance ────────────────────────────────────────────
-    @FXML private Button btnThemeLight;
-    @FXML private Button btnThemeDark;
-    @FXML private Button btnThemeSystem;
+    @FXML
+    private Button btnThemeLight;
+    @FXML
+    private Button btnThemeDark;
+    @FXML
+    private Button btnThemeSystem;
 
     // ── Status Search ─────────────────────────────────────────
-    @FXML private Label labelSearchStatus;
+    @FXML
+    private Label labelSearchStatus;
 
     // ── State ─────────────────────────────────────────────────
-    private String selectedTempUnit  = "celsius";
-    private String selectedWindUnit  = "mph";
+    private String selectedTempUnit = "celsius";
+    private String selectedWindUnit = "mph";
     private String selectedPressUnit = "hpa";
-    private String selectedTheme     = "light";
+    private String selectedTheme = "light";
 
     private final GeocodingService geocodingService = new GeocodingService();
 
@@ -61,16 +77,21 @@ public class SettingsController {
     // ── Search Lokasi (Geocoding API) ──────────────────────────
     @FXML
     private void handleSearch() {
-        if (searchField == null) return;
+        if (searchField == null) {
+            return;
+        }
         String query = searchField.getText().trim();
-        if (query.isEmpty()) return;
+        if (query.isEmpty()) {
+            return;
+        }
 
         if (labelSearchStatus != null) {
             labelSearchStatus.setText("⏳ Mencari \"" + query + "\"...");
             labelSearchStatus.setVisible(true);
         }
-        if (locationListContainer != null)
+        if (locationListContainer != null) {
             locationListContainer.getChildren().clear();
+        }
 
         Task<List<Location>> task = new Task<>() {
             @Override
@@ -82,7 +103,9 @@ public class SettingsController {
         task.setOnSucceeded(e -> {
             List<Location> locations = task.getValue();
 
-            if (labelSearchStatus != null) labelSearchStatus.setVisible(false);
+            if (labelSearchStatus != null) {
+                labelSearchStatus.setVisible(false);
+            }
 
             if (locations.isEmpty()) {
                 if (labelSearchStatus != null) {
@@ -132,14 +155,14 @@ public class SettingsController {
         HBox.setHgrow(textBox, Priority.ALWAYS);
 
         Label nameLabel = new Label(loc.getName()
-            + (loc.getState() != null && !loc.getState().isEmpty()
-               ? ", " + loc.getState() : ""));
+                + (loc.getState() != null && !loc.getState().isEmpty()
+                ? ", " + loc.getState() : ""));
         nameLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold;"
-                         + "-fx-text-fill: #0f172a;");
+                + "-fx-text-fill: #0f172a;");
 
         Label countryLabel = new Label(loc.getCountry()
-            + "  ·  " + String.format("%.2f", loc.getLat())
-            + ", "   + String.format("%.2f", loc.getLon()));
+                + "  ·  " + String.format("%.2f", loc.getLat())
+                + ", " + String.format("%.2f", loc.getLon()));
         countryLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
 
         textBox.getChildren().addAll(nameLabel, countryLabel);
@@ -165,43 +188,87 @@ public class SettingsController {
     }
 
     private void selectLocation(Location loc) {
+        // Simpan ke AppState agar Dashboard bisa reload
+        AppState.getInstance().setLocation(loc.getLat(), loc.getLon(), loc.getDisplayName());
+
         System.out.println("📍 Lokasi dipilih: " + loc.getDisplayName()
-            + " (" + loc.getLat() + ", " + loc.getLon() + ")");
+                + " (" + loc.getLat() + ", " + loc.getLon() + ")");
 
-        // Simpan koordinat ke SharedPreferences / UserConfig
-        // TODO: Fase lanjutan — sync ke Dashboard & Forecast controller
-
-        // Feedback visual
         if (labelSearchStatus != null) {
-            labelSearchStatus.setText("✅ " + loc.getDisplayName() + " ditambahkan!");
+            labelSearchStatus.setText("✅ " + loc.getDisplayName() + " — Dashboard akan diperbarui.");
             labelSearchStatus.setVisible(true);
         }
-
-        if (searchField != null) searchField.clear();
+        if (searchField != null) {
+            searchField.clear();
+        }
+        if (locationListContainer != null) {
+            locationListContainer.getChildren().clear();
+        }
     }
 
     // ── Unit Handlers ──────────────────────────────────────────
-    @FXML private void handleCelsius()    { selectedTempUnit  = "celsius";    refreshUnitStyles(); }
-    @FXML private void handleFahrenheit() { selectedTempUnit  = "fahrenheit"; refreshUnitStyles(); }
-    @FXML private void handleKmh()        { selectedWindUnit  = "kmh";        refreshUnitStyles(); }
-    @FXML private void handleMph()        { selectedWindUnit  = "mph";        refreshUnitStyles(); }
-    @FXML private void handleHpa()        { selectedPressUnit = "hpa";        refreshUnitStyles(); }
-    @FXML private void handleInhg()       { selectedPressUnit = "inhg";       refreshUnitStyles(); }
+    @FXML
+    private void handleCelsius() {
+        selectedTempUnit = "celsius";
+        refreshUnitStyles();
+    }
+
+    @FXML
+    private void handleFahrenheit() {
+        selectedTempUnit = "fahrenheit";
+        refreshUnitStyles();
+    }
+
+    @FXML
+    private void handleKmh() {
+        selectedWindUnit = "kmh";
+        refreshUnitStyles();
+    }
+
+    @FXML
+    private void handleMph() {
+        selectedWindUnit = "mph";
+        refreshUnitStyles();
+    }
+
+    @FXML
+    private void handleHpa() {
+        selectedPressUnit = "hpa";
+        refreshUnitStyles();
+    }
+
+    @FXML
+    private void handleInhg() {
+        selectedPressUnit = "inhg";
+        refreshUnitStyles();
+    }
 
     private void refreshUnitStyles() {
         String active = "-fx-background-color: #2b8cee; -fx-text-fill: white;"
-                      + "-fx-font-weight: bold; -fx-font-size: 12px;"
-                      + "-fx-background-radius: 8; -fx-cursor: hand;";
+                + "-fx-font-weight: bold; -fx-font-size: 12px;"
+                + "-fx-background-radius: 8; -fx-cursor: hand;";
         String normal = "-fx-background-color: transparent; -fx-text-fill: #64748b;"
-                      + "-fx-font-size: 12px;"
-                      + "-fx-background-radius: 8; -fx-cursor: hand;";
+                + "-fx-font-size: 12px;"
+                + "-fx-background-radius: 8; -fx-cursor: hand;";
 
-        if (btnCelsius    != null) btnCelsius.setStyle(selectedTempUnit.equals("celsius")     ? active : normal);
-        if (btnFahrenheit != null) btnFahrenheit.setStyle(selectedTempUnit.equals("fahrenheit") ? active : normal);
-        if (btnKmh        != null) btnKmh.setStyle(selectedWindUnit.equals("kmh")              ? active : normal);
-        if (btnMph        != null) btnMph.setStyle(selectedWindUnit.equals("mph")              ? active : normal);
-        if (btnHpa        != null) btnHpa.setStyle(selectedPressUnit.equals("hpa")             ? active : normal);
-        if (btnInhg       != null) btnInhg.setStyle(selectedPressUnit.equals("inhg")           ? active : normal);
+        if (btnCelsius != null) {
+            btnCelsius.setStyle(selectedTempUnit.equals("celsius") ? active : normal);
+        }
+        if (btnFahrenheit != null) {
+            btnFahrenheit.setStyle(selectedTempUnit.equals("fahrenheit") ? active : normal);
+        }
+        if (btnKmh != null) {
+            btnKmh.setStyle(selectedWindUnit.equals("kmh") ? active : normal);
+        }
+        if (btnMph != null) {
+            btnMph.setStyle(selectedWindUnit.equals("mph") ? active : normal);
+        }
+        if (btnHpa != null) {
+            btnHpa.setStyle(selectedPressUnit.equals("hpa") ? active : normal);
+        }
+        if (btnInhg != null) {
+            btnInhg.setStyle(selectedPressUnit.equals("inhg") ? active : normal);
+        }
     }
 
     // ── Notification Handlers ──────────────────────────────────
@@ -221,7 +288,9 @@ public class SettingsController {
     }
 
     private void updateToggleStyle(ToggleButton btn) {
-        if (btn == null) return;
+        if (btn == null) {
+            return;
+        }
         if (btn.isSelected()) {
             btn.setText("ON");
             btn.setStyle("""
@@ -245,23 +314,46 @@ public class SettingsController {
     }
 
     // ── Theme Handlers ─────────────────────────────────────────
-    @FXML private void handleThemeLight()  { selectedTheme = "light";  refreshThemeStyles(); }
-    @FXML private void handleThemeDark()   { selectedTheme = "dark";   refreshThemeStyles(); }
-    @FXML private void handleThemeSystem() { selectedTheme = "system"; refreshThemeStyles(); }
+    @FXML
+    private void handleThemeLight() {
+        selectedTheme = "light";
+        ThemeManager.apply(ThemeManager.Theme.LIGHT);
+        refreshThemeStyles();
+    }
+
+    @FXML
+    private void handleThemeDark() {
+        selectedTheme = "dark";
+        ThemeManager.apply(ThemeManager.Theme.DARK);
+        refreshThemeStyles();
+    }
+
+    @FXML
+    private void handleThemeSystem() {
+        selectedTheme = "system";
+        ThemeManager.apply(ThemeManager.Theme.SYSTEM);
+        refreshThemeStyles();
+    }
 
     private void refreshThemeStyles() {
         String active = "-fx-background-color: #eff6ff;"
-                      + "-fx-border-color: #2b8cee; -fx-border-width: 2;"
-                      + "-fx-border-radius: 12; -fx-background-radius: 12;"
-                      + "-fx-cursor: hand;";
+                + "-fx-border-color: #2b8cee; -fx-border-width: 2;"
+                + "-fx-border-radius: 12; -fx-background-radius: 12;"
+                + "-fx-cursor: hand;";
         String normal = "-fx-background-color: #f1f5f9;"
-                      + "-fx-border-color: transparent; -fx-border-width: 2;"
-                      + "-fx-border-radius: 12; -fx-background-radius: 12;"
-                      + "-fx-cursor: hand;";
+                + "-fx-border-color: transparent; -fx-border-width: 2;"
+                + "-fx-border-radius: 12; -fx-background-radius: 12;"
+                + "-fx-cursor: hand;";
 
-        if (btnThemeLight  != null) btnThemeLight.setStyle(selectedTheme.equals("light")   ? active : normal);
-        if (btnThemeDark   != null) btnThemeDark.setStyle(selectedTheme.equals("dark")     ? active : normal);
-        if (btnThemeSystem != null) btnThemeSystem.setStyle(selectedTheme.equals("system") ? active : normal);
+        if (btnThemeLight != null) {
+            btnThemeLight.setStyle(selectedTheme.equals("light") ? active : normal);
+        }
+        if (btnThemeDark != null) {
+            btnThemeDark.setStyle(selectedTheme.equals("dark") ? active : normal);
+        }
+        if (btnThemeSystem != null) {
+            btnThemeSystem.setStyle(selectedTheme.equals("system") ? active : normal);
+        }
     }
 
     // ── Save ───────────────────────────────────────────────────
