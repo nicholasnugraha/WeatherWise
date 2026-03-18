@@ -6,42 +6,24 @@
         <link rel="stylesheet"
               href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
         <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
-
+            * { margin: 0; padding: 0; box-sizing: border-box; }
             html, body {
-                width: 100%;
-                height: 100%;
+                width: 100%; height: 100%;
                 overflow: hidden;
                 background: #aad3df;
             }
-
-            /* KUNCI FIX: Jangan pakai 100%, set via JS */
             #map {
-                width: 100%;
-                height: 100%;
+                width: 100%; height: 100%;
                 background: #aad3df;
                 position: absolute;
-                top: 0;
-                left: 0;
+                top: 0; left: 0;
             }
-
-            .leaflet-control-attribution {
-                font-size: 9px;
-                opacity: 0.5;
-            }
+            .leaflet-control-attribution { font-size: 9px; opacity: 0.5; }
             .leaflet-popup-content-wrapper {
-                background: #1e293b;
-                color: white;
-                border-radius: 12px;
-                border: 1px solid #334155;
+                background: #1e293b; color: white;
+                border-radius: 12px; border: 1px solid #334155;
             }
-            .leaflet-popup-tip {
-                background: #1e293b;
-            }
+            .leaflet-popup-tip { background: #1e293b; }
             .current-location-marker {
                 background: #2b8cee;
                 border: 3px solid white;
@@ -50,15 +32,9 @@
                 animation: pulse 2s infinite;
             }
             @keyframes pulse {
-                0%   {
-                    box-shadow: 0 0 0 0   rgba(43,140,238,0.5);
-                }
-                70%  {
-                    box-shadow: 0 0 0 14px rgba(43,140,238,0);
-                }
-                100% {
-                    box-shadow: 0 0 0 0   rgba(43,140,238,0);
-                }
+                0%   { box-shadow: 0 0 0 0   rgba(43,140,238,0.5); }
+                70%  { box-shadow: 0 0 0 14px rgba(43,140,238,0); }
+                100% { box-shadow: 0 0 0 0   rgba(43,140,238,0); }
             }
         </style>
     </head>
@@ -66,62 +42,84 @@
         <div id="map"></div>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
-
             var map = null;
-            var API_KEY = "YOUR_API_KEY";
+            // API Key diisi dari Java via setApiKey()
+            var API_KEY = "";
             var weatherLayers = {};
             var simulationCircles = [];
             var currentMarker = null;
 
+            // Default: Jakarta, Indonesia
+            var DEFAULT_LAT = -6.2088;
+            var DEFAULT_LON = 106.8456;
+            var DEFAULT_CITY = "Jakarta, ID";
+
             var radarData = {
                 precipitation: [
-                    [37.85, -122.55, '#93c5fd', 0.35],
-                    [37.80, -122.48, '#4ade80', 0.35],
-                    [37.77, -122.42, '#facc15', 0.35],
-                    [37.74, -122.38, '#f97316', 0.35],
-                    [37.70, -122.44, '#ef4444', 0.35],
-                    [37.65, -122.50, '#4ade80', 0.30]
+                    [-6.10, 106.75, '#93c5fd', 0.35],
+                    [-6.20, 106.82, '#4ade80', 0.35],
+                    [-6.25, 106.90, '#facc15', 0.35],
+                    [-6.30, 107.00, '#f97316', 0.35],
+                    [-6.15, 106.95, '#ef4444', 0.35],
+                    [-6.35, 106.80, '#4ade80', 0.30]
                 ],
                 clouds: [
-                    [37.90, -122.60, '#93c5fd', 0.30],
-                    [37.77, -122.44, '#4ade80', 0.30],
-                    [37.72, -122.40, '#facc15', 0.30],
-                    [37.68, -122.50, '#93c5fd', 0.25]
+                    [-6.05, 106.70, '#93c5fd', 0.30],
+                    [-6.20, 106.84, '#4ade80', 0.30],
+                    [-6.28, 106.92, '#facc15', 0.30],
+                    [-6.32, 107.05, '#93c5fd', 0.25]
                 ],
                 wind: [
-                    [37.82, -122.50, '#facc15', 0.30],
-                    [37.77, -122.44, '#f97316', 0.35],
-                    [37.68, -122.42, '#4ade80', 0.30],
-                    [37.85, -122.38, '#93c5fd', 0.25]
+                    [-6.08, 106.78, '#facc15', 0.30],
+                    [-6.20, 106.84, '#f97316', 0.35],
+                    [-6.32, 106.88, '#4ade80', 0.30],
+                    [-6.05, 107.00, '#93c5fd', 0.25]
                 ],
                 temp: [
-                    [37.90, -122.60, '#93c5fd', 0.30],
-                    [37.77, -122.44, '#facc15', 0.35],
-                    [37.68, -122.40, '#ef4444', 0.40],
-                    [37.82, -122.55, '#4ade80', 0.30]
+                    [-6.05, 106.70, '#ef4444', 0.30],
+                    [-6.20, 106.84, '#facc15', 0.35],
+                    [-6.32, 106.88, '#f97316', 0.40],
+                    [-6.08, 107.00, '#93c5fd', 0.30]
                 ]
             };
 
-            // ── KUNCI FIX: Set ukuran #map secara eksplisit dalam px ──
             function setMapSize() {
                 var mapDiv = document.getElementById('map');
-                mapDiv.style.width = window.innerWidth + 'px';
+                mapDiv.style.width  = window.innerWidth  + 'px';
                 mapDiv.style.height = window.innerHeight + 'px';
             }
 
-            // ── initMap dipanggil dari Java ────────────────────────────
+            /** Dipanggil dari Java: injeksi API key agar tile layer OWM aktif */
+            function setApiKey(key) {
+                API_KEY = key;
+                // Re-init layer OWM jika map sudah ada
+                if (map !== null) {
+                    ['precipitation_new','clouds_new','wind_new','temp_new'].forEach(function(name) {
+                        var shortName = name.replace('_new','');
+                        if (weatherLayers[shortName]) {
+                            if (map.hasLayer(weatherLayers[shortName])) {
+                                map.removeLayer(weatherLayers[shortName]);
+                            }
+                        }
+                        weatherLayers[shortName] = L.tileLayer(
+                            'https://tile.openweathermap.org/map/' + name + '/{z}/{x}/{y}.png?appid=' + API_KEY,
+                            { opacity: 0.7, maxZoom: 18 }
+                        );
+                    });
+                }
+            }
+
             function initMap() {
-                // Set ukuran eksplisit dulu
                 setMapSize();
 
                 if (map !== null) {
                     setMapSize();
-                    map.invalidateSize({animate: false});
+                    map.invalidateSize({ animate: false });
                     return;
                 }
 
                 map = L.map('map', {
-                    center: [37.7749, -122.4194],
+                    center: [DEFAULT_LAT, DEFAULT_LON],
                     zoom: 10,
                     zoomControl: false,
                     preferCanvas: true,
@@ -136,113 +134,94 @@
                     keepBuffer: 4,
                     updateWhenIdle: false,
                     updateWhenZooming: false,
-                    subdomains: ['a', 'b', 'c'],
-                    attribution: '© OpenStreetMap contributors'
+                    subdomains: ['a','b','c'],
+                    attribution: '\u00a9 OpenStreetMap contributors'
                 }).addTo(map);
 
-                ['precipitation', 'clouds', 'wind', 'temp'].forEach(function (name) {
-                    weatherLayers[name] = L.tileLayer(
-                            'https://tile.openweathermap.org/map/' + name + '_new/{z}/{x}/{y}.png?appid=' + API_KEY,
-                            {opacity: 0.7, maxZoom: 18}
+                // Inisialisasi OWM tile layers
+                ['precipitation_new','clouds_new','wind_new','temp_new'].forEach(function(name) {
+                    var shortName = name.replace('_new','');
+                    weatherLayers[shortName] = L.tileLayer(
+                        'https://tile.openweathermap.org/map/' + name + '/{z}/{x}/{y}.png?appid=' + (API_KEY || ''),
+                        { opacity: 0.7, maxZoom: 18 }
                     );
                 });
 
                 var currentIcon = L.divIcon({
                     className: 'current-location-marker',
-                    iconSize: [16, 16],
-                    iconAnchor: [8, 8]
+                    iconSize:  [16, 16],
+                    iconAnchor:[8, 8]
                 });
-                currentMarker = L.marker([37.7749, -122.4194], {icon: currentIcon})
-                        .bindPopup('<b>San Francisco, CA</b><br>Light Rain · 62°F')
-                        .addTo(map);
+                currentMarker = L.marker([DEFAULT_LAT, DEFAULT_LON], { icon: currentIcon })
+                    .bindPopup('<b>' + DEFAULT_CITY + '</b><br>Loading...')
+                    .addTo(map);
 
                 showSimulatedRadar('precipitation');
 
-                // Panggil lagi setelah init untuk pastikan tile penuh
-                setTimeout(function () {
+                setTimeout(function() {
                     setMapSize();
-                    map.invalidateSize({animate: false});
+                    map.invalidateSize({ animate: false });
                 }, 100);
             }
 
             function showSimulatedRadar(type) {
-                simulationCircles.forEach(function (c) {
-                    if (map && map.hasLayer(c))
-                        map.removeLayer(c);
+                simulationCircles.forEach(function(c) {
+                    if (map && map.hasLayer(c)) map.removeLayer(c);
                 });
                 simulationCircles = [];
                 var points = radarData[type] || radarData.precipitation;
-                points.forEach(function (p) {
+                points.forEach(function(p) {
                     var circle = L.circle([p[0], p[1]], {
-                        radius: 7000, color: 'transparent',
-                        fillColor: p[2], fillOpacity: p[3],
+                        radius: 7000,
+                        color: 'transparent',
+                        fillColor: p[2],
+                        fillOpacity: p[3],
                         interactive: false
                     }).addTo(map);
                     simulationCircles.push(circle);
                 });
             }
 
-            // Dipanggil dari Java saat window resize
             function onResize(w, h) {
                 var mapDiv = document.getElementById('map');
-                mapDiv.style.width = w + 'px';
+                mapDiv.style.width  = w + 'px';
                 mapDiv.style.height = h + 'px';
-                if (map)
-                    map.invalidateSize({animate: false});
+                if (map) map.invalidateSize({ animate: false });
             }
 
-            function safeInvalidateSize() {
-                if (map) {
-                    setMapSize();
-                    map.invalidateSize({animate: false});
-                }
-            }
-
-            function zoomIn() {
-                if (map)
-                    map.zoomIn();
-            }
-            function zoomOut() {
-                if (map)
-                    map.zoomOut();
-            }
+            function zoomIn()  { if (map) map.zoomIn(); }
+            function zoomOut() { if (map) map.zoomOut(); }
 
             function goToCurrentLocation() {
-                if (!map)
-                    return;
-                map.flyTo([37.7749, -122.4194], 12, {animate: true, duration: 1.0});
-                if (currentMarker)
-                    currentMarker.openPopup();
+                if (!map) return;
+                map.flyTo([DEFAULT_LAT, DEFAULT_LON], 12, { animate: true, duration: 1.0 });
+                if (currentMarker) currentMarker.openPopup();
             }
 
             function setWeatherLayer(layerName) {
-                if (!map)
-                    return;
-                Object.values(weatherLayers).forEach(function (l) {
-                    if (map.hasLayer(l))
-                        map.removeLayer(l);
+                if (!map) return;
+                Object.values(weatherLayers).forEach(function(l) {
+                    if (map.hasLayer(l)) map.removeLayer(l);
                 });
-                if (API_KEY !== 'YOUR_API_KEY' && weatherLayers[layerName]) {
+                // Gunakan tile OWM jika API key tersedia, fallback ke simulasi
+                if (API_KEY && API_KEY.length > 10 && weatherLayers[layerName]) {
                     weatherLayers[layerName].addTo(map);
                 }
                 showSimulatedRadar(layerName);
             }
 
             function flyToCity(lat, lng, name, desc) {
-                if (!map)
-                    return;
-                map.flyTo([lat, lng], 12, {animate: true, duration: 1.2});
+                if (!map) return;
+                DEFAULT_LAT  = lat;
+                DEFAULT_LON  = lng;
+                DEFAULT_CITY = name;
+                map.flyTo([lat, lng], 12, { animate: true, duration: 1.2 });
                 if (currentMarker) {
                     currentMarker.setLatLng([lat, lng]);
                     currentMarker.setPopupContent('<b>' + name + '</b><br>' + desc);
                     currentMarker.openPopup();
                 }
             }
-
-            function setApiKey(key) {
-                API_KEY = key;
-            }
-
         </script>
     </body>
 </html>

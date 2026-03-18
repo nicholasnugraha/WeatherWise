@@ -1,9 +1,11 @@
 package com.weatherwise.controller;
 
+import com.weatherwise.util.AppConfig;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
@@ -17,6 +19,8 @@ public class RadarMapController {
     @FXML private Button  btnClouds;
     @FXML private Button  btnWind;
     @FXML private Button  btnTemp;
+    @FXML private Label   overlayCity;
+    @FXML private Label   overlayCondition;
 
     private WebEngine    webEngine;
     private List<Button> layerButtons;
@@ -37,7 +41,6 @@ public class RadarMapController {
             if (newScene != null) {
                 newScene.windowProperty().addListener((obsW, oldW, newW) -> {
                     if (newW != null) {
-                        // Gunakan daemon thread agar JVM bisa shutdown normal
                         Thread t = new Thread(() -> {
                             try { Thread.sleep(500); }
                             catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
@@ -56,7 +59,6 @@ public class RadarMapController {
     private void callInitMap() {
         double w = mapWebView.getWidth();
         double h = mapWebView.getHeight();
-
         if (w <= 0 && mapWebView.getScene() != null) {
             w = mapWebView.getScene().getWidth();
             h = mapWebView.getScene().getHeight() - 120;
@@ -66,13 +68,20 @@ public class RadarMapController {
 
         mapInited = true;
         final double fw = w, fh = h;
-        System.out.println("\uD83D\uDDFA\uFE0F initMap dengan ukuran: " + fw + "x" + fh);
+        System.out.println("\uD83D\uDDFA\uFE0F initMap: " + fw + "x" + fh);
 
         webEngine.executeScript(
-            "document.getElementById('map').style.width='"  + (int) fw + "px';"
-          + "document.getElementById('map').style.height='" + (int) fh + "px';"
+            "document.getElementById('map').style.width='"  + (int)fw + "px';"
+          + "document.getElementById('map').style.height='" + (int)fh + "px';"
         );
         webEngine.executeScript("initMap();");
+
+        // Kirim API key ke JavaScript setelah map init
+        String apiKey = AppConfig.getApiKey();
+        if (!apiKey.isEmpty()) {
+            webEngine.executeScript("setApiKey('" + apiKey + "');");
+            System.out.println("\u2705 API key dikirim ke radar map");
+        }
     }
 
     private void loadMap() {
@@ -94,12 +103,16 @@ public class RadarMapController {
                         double h = mapWebView.getLayoutBounds().getHeight();
                         if (w > 0 && h > 0 && !mapInited) {
                             mapInited = true;
-                            System.out.println("\uD83D\uDC90 Bounds saat load: " + w + "x" + h);
                             webEngine.executeScript(
-                                "document.getElementById('map').style.width='"  + (int) w + "px';"
-                              + "document.getElementById('map').style.height='" + (int) h + "px';"
+                                "document.getElementById('map').style.width='"  + (int)w + "px';"
+                              + "document.getElementById('map').style.height='" + (int)h + "px';"
                             );
                             webEngine.executeScript("initMap();");
+                            // Kirim API key
+                            String apiKey = AppConfig.getApiKey();
+                            if (!apiKey.isEmpty()) {
+                                webEngine.executeScript("setApiKey('" + apiKey + "');");
+                            }
                         }
                     });
                 }
@@ -111,33 +124,21 @@ public class RadarMapController {
         if (pageLoaded) Platform.runLater(() -> webEngine.executeScript(script));
     }
 
-    @FXML private void handleZoomIn()            { execJS("zoomIn();"); }
-    @FXML private void handleZoomOut()           { execJS("zoomOut();"); }
-    @FXML private void handleMyLocation()        { execJS("goToCurrentLocation();"); }
-
-    @FXML
-    private void handleLayerPrecipitation() {
-        execJS("setWeatherLayer('precipitation');");
-        setActiveLayer(btnPrecipitation);
+    public void updateOverlay(String city, String condition) {
+        Platform.runLater(() -> {
+            if (overlayCity      != null) overlayCity.setText(city);
+            if (overlayCondition != null) overlayCondition.setText(condition);
+        });
     }
 
-    @FXML
-    private void handleLayerClouds() {
-        execJS("setWeatherLayer('clouds');");
-        setActiveLayer(btnClouds);
-    }
+    @FXML private void handleZoomIn()       { execJS("zoomIn();"); }
+    @FXML private void handleZoomOut()      { execJS("zoomOut();"); }
+    @FXML private void handleMyLocation()   { execJS("goToCurrentLocation();"); }
 
-    @FXML
-    private void handleLayerWind() {
-        execJS("setWeatherLayer('wind');");
-        setActiveLayer(btnWind);
-    }
-
-    @FXML
-    private void handleLayerTemp() {
-        execJS("setWeatherLayer('temp');");
-        setActiveLayer(btnTemp);
-    }
+    @FXML private void handleLayerPrecipitation() { execJS("setWeatherLayer('precipitation');"); setActiveLayer(btnPrecipitation); }
+    @FXML private void handleLayerClouds()        { execJS("setWeatherLayer('clouds');");        setActiveLayer(btnClouds); }
+    @FXML private void handleLayerWind()          { execJS("setWeatherLayer('wind');");           setActiveLayer(btnWind); }
+    @FXML private void handleLayerTemp()          { execJS("setWeatherLayer('temp');");           setActiveLayer(btnTemp); }
 
     @FXML private void handleLayers() {}
     @FXML private void handleShare()  {}
@@ -158,5 +159,6 @@ public class RadarMapController {
 
     public void flyToCity(double lat, double lng, String name, String desc) {
         execJS(String.format("flyToCity(%f, %f, '%s', '%s');", lat, lng, name, desc));
+        updateOverlay(name, desc);
     }
 }

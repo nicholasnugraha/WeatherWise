@@ -1,31 +1,30 @@
 package com.weatherwise.controller;
 
+import com.weatherwise.component.ForecastRowCard;
+import com.weatherwise.component.HumidityBarChart;
 import com.weatherwise.model.ForecastDay;
 import com.weatherwise.service.WeatherService;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
-import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.List;
 
 public class ForecastController {
 
-    @FXML private VBox  forecastContainer;
-    @FXML private Label labelCity;
-    @FXML private Label labelStatus;
+    @FXML private VBox   forecastContainer;       // fx:id di FXML
+    @FXML private Label  labelCity;
+    @FXML private Label  labelStatus;
     @FXML private Button btnCelsius;
     @FXML private Button btnFahrenheit;
+    @FXML private Pane   humidityChartContainer;
 
     private final WeatherService weatherService = new WeatherService();
 
-    // Koordinat default: Jakarta, Indonesia
     private double  currentLat  = -6.2088;
     private double  currentLon  = 106.8456;
     private String  currentCity = "Jakarta, ID";
@@ -40,36 +39,31 @@ public class ForecastController {
         loadForecast(currentLat, currentLon);
     }
 
-    // ── Load Forecast ──────────────────────────────────────────
+    // ── Load Forecast ─────────────────────────────────────────
     public void loadForecast(double lat, double lon) {
         this.currentLat = lat;
         this.currentLon = lon;
-
         showLoading();
 
         Task<List<ForecastDay>> task = new Task<>() {
-            @Override
-            protected List<ForecastDay> call() throws Exception {
+            @Override protected List<ForecastDay> call() throws Exception {
                 return weatherService.getForecast(lat, lon);
             }
         };
 
         task.setOnSucceeded(e -> {
             cachedForecast = task.getValue();
-            renderForecast(cachedForecast);
+            Platform.runLater(() -> renderForecast(cachedForecast));
         });
 
         task.setOnFailed(e -> {
             String msg = task.getException() != null
-                    ? task.getException().getMessage()
-                    : "Gagal memuat data";
+                    ? task.getException().getMessage() : "Gagal memuat data";
             System.err.println("\u274c Gagal load forecast: " + msg);
             Platform.runLater(() -> showError(msg));
         });
 
-        Thread t = new Thread(task);
-        t.setDaemon(true);
-        t.start();
+        Thread t = new Thread(task); t.setDaemon(true); t.start();
     }
 
     public void setLocation(double lat, double lon, String cityName) {
@@ -80,86 +74,51 @@ public class ForecastController {
         loadForecast(lat, lon);
     }
 
-    // ── Render Card ────────────────────────────────────────────
+    // ── Render kartu forecast menggunakan ForecastRowCard ─────
     private void renderForecast(List<ForecastDay> days) {
         if (forecastContainer == null) return;
         forecastContainer.getChildren().clear();
         if (labelStatus != null) labelStatus.setVisible(false);
 
         for (ForecastDay day : days) {
-            forecastContainer.getChildren().add(buildForecastCard(day));
+            // Konversi suhu ke Fahrenheit jika diperlukan
+            if (!isCelsius) {
+                ForecastDay converted = new ForecastDay();
+                converted.setDayName(day.getDayName());
+                converted.setDate(day.getDate());
+                converted.setCondition(day.getCondition());
+                converted.setDescription(day.getDescription());
+                converted.setConditionIcon(day.getConditionIcon());
+                converted.setIconLiteral(day.getIconLiteral());
+                converted.setIconColor(day.getIconColor());
+                converted.setTempHigh(celsiusToF(day.getTempHigh()));
+                converted.setTempLow(celsiusToF(day.getTempLow()));
+                converted.setHumidity(day.getHumidity());
+                converted.setWindSpeed(day.getWindSpeed());
+                forecastContainer.getChildren().add(new ForecastRowCard(converted));
+            } else {
+                forecastContainer.getChildren().add(new ForecastRowCard(day));
+            }
+        }
+
+        // Render humidity chart dari data nyata
+        if (humidityChartContainer != null && !days.isEmpty()) {
+            humidityChartContainer.getChildren().clear();
+            double w = humidityChartContainer.getWidth();
+            double h = humidityChartContainer.getPrefHeight();
+            if (w <= 0) w = 400;
+
+            HumidityBarChart chart = new HumidityBarChart(w, h);
+            chart.setData(
+                days.stream().map(ForecastDay::getDayName).toArray(String[]::new),
+                days.stream().mapToDouble(ForecastDay::getHumidity).toArray()
+            );
+            humidityChartContainer.getChildren().add(chart);
         }
     }
 
-    private HBox buildForecastCard(ForecastDay day) {
-        HBox card = new HBox(16);
-        card.setAlignment(Pos.CENTER_LEFT);
-        card.setStyle("""
-            -fx-background-color: white;
-            -fx-background-radius: 14;
-            -fx-padding: 14 20 14 20;
-            -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),10,0,0,2);
-            """);
-
-        VBox dayBox = new VBox(3);
-        dayBox.setMinWidth(110);
-        Label dayLabel  = new Label(day.getDayName());
-        dayLabel.setStyle("-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #0f172a;");
-        Label dateLabel = new Label(day.getDate().toUpperCase());
-        dateLabel.setStyle("-fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
-        dayBox.getChildren().addAll(dayLabel, dateLabel);
-
-        VBox iconBox = new VBox();
-        iconBox.setAlignment(Pos.CENTER);
-        iconBox.setMinWidth(52);
-        iconBox.setMaxWidth(52);
-        iconBox.setStyle("-fx-background-color: #eff6ff; -fx-background-radius: 10;");
-        FontIcon icon = new FontIcon();
-        icon.setIconLiteral(getWeatherIcon(day.getConditionIcon()));
-        icon.setIconSize(24);
-        icon.setIconColor(javafx.scene.paint.Color.web("#2b8cee"));
-        iconBox.getChildren().add(icon);
-
-        VBox condBox = new VBox(3);
-        condBox.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(condBox, Priority.ALWAYS);
-        Label condLabel   = new Label(capitalize(day.getCondition()));
-        condLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: 600; -fx-text-fill: #0f172a;");
-        Label detailLabel = new Label("Humidity " + day.getHumidity()
-                                    + "% \u00b7 Wind " + (int) day.getWindSpeed() + " m/s");
-        detailLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #64748b;");
-        condBox.getChildren().addAll(condLabel, detailLabel);
-
-        HBox tempBox = new HBox(12);
-        tempBox.setAlignment(Pos.CENTER_RIGHT);
-        double high = isCelsius ? day.getTempHigh() : celsiusToF(day.getTempHigh());
-        double low  = isCelsius ? day.getTempLow()  : celsiusToF(day.getTempLow());
-        String unit = isCelsius ? "\u00b0C" : "\u00b0F";
-
-        VBox highBox = new VBox(1);
-        highBox.setAlignment(Pos.CENTER_RIGHT);
-        Label highTemp = new Label((int) high + unit);
-        highTemp.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #0f172a;");
-        Label highLbl  = new Label("High");
-        highLbl.setStyle("-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;");
-        highBox.getChildren().addAll(highTemp, highLbl);
-
-        VBox lowBox = new VBox(1);
-        lowBox.setAlignment(Pos.CENTER_RIGHT);
-        Label lowTemp = new Label((int) low + unit);
-        lowTemp.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #94a3b8;");
-        Label lowLbl  = new Label("Low");
-        lowLbl.setStyle("-fx-font-size: 9px; -fx-text-fill: #94a3b8; -fx-font-weight: bold;");
-        lowBox.getChildren().addAll(lowTemp, lowLbl);
-
-        tempBox.getChildren().addAll(highBox, lowBox);
-        card.getChildren().addAll(dayBox, iconBox, condBox, tempBox);
-        return card;
-    }
-
-    // ── Unit Toggle ────────────────────────────────────────────
-    @FXML
-    private void handleCelsius() {
+    // ── Unit Toggle ───────────────────────────────────────────
+    @FXML private void handleCelsius() {
         if (!isCelsius) {
             isCelsius = true;
             refreshUnitButtons();
@@ -167,8 +126,7 @@ public class ForecastController {
         }
     }
 
-    @FXML
-    private void handleFahrenheit() {
+    @FXML private void handleFahrenheit() {
         if (isCelsius) {
             isCelsius = false;
             refreshUnitButtons();
@@ -178,16 +136,33 @@ public class ForecastController {
 
     private void refreshUnitButtons() {
         String active = "-fx-background-color: #2b8cee; -fx-text-fill: white;"
-                      + "-fx-font-weight: bold; -fx-font-size: 12px;"
-                      + "-fx-background-radius: 8; -fx-cursor: hand; -fx-padding: 6 16 6 16;";
+                      + "-fx-font-weight: bold; -fx-font-size: 13px;"
+                      + "-fx-background-radius: 7; -fx-cursor: hand;"
+                      + "-fx-pref-width: 48; -fx-pref-height: 32;";
         String normal = "-fx-background-color: transparent; -fx-text-fill: #64748b;"
-                      + "-fx-font-size: 12px; -fx-background-radius: 8;"
-                      + "-fx-cursor: hand; -fx-padding: 6 16 6 16;";
+                      + "-fx-font-weight: bold; -fx-font-size: 13px;"
+                      + "-fx-background-radius: 7; -fx-cursor: hand;"
+                      + "-fx-pref-width: 48; -fx-pref-height: 32;";
         if (btnCelsius    != null) btnCelsius.setStyle(isCelsius  ? active : normal);
         if (btnFahrenheit != null) btnFahrenheit.setStyle(!isCelsius ? active : normal);
     }
 
-    // ── State Helpers ──────────────────────────────────────────
+    // ── Tombol Open Map ───────────────────────────────────────
+    @FXML
+    private void handleOpenMap() {
+        // Navigasi ke halaman Maps melalui MainWindowController
+        // Cari MainWindowController di scene graph
+        if (forecastContainer != null && forecastContainer.getScene() != null) {
+            javafx.scene.Node root = forecastContainer.getScene().getRoot();
+            // Trigger via lookup — cari tombol Maps di sidebar
+            javafx.scene.Node mapsBtn = root.lookup("#sidebarMaps");
+            if (mapsBtn instanceof javafx.scene.control.Button btn) {
+                btn.fire();
+            }
+        }
+    }
+
+    // ── State Helpers ─────────────────────────────────────────
     private void showLoading() {
         if (forecastContainer != null) forecastContainer.getChildren().clear();
         if (labelStatus != null) {
@@ -203,27 +178,5 @@ public class ForecastController {
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────
     private double celsiusToF(double c) { return c * 9.0 / 5.0 + 32; }
-
-    private String getWeatherIcon(String owmIcon) {
-        if (owmIcon == null) return "mdi2w-weather-cloudy";
-        return switch (owmIcon.substring(0, 2)) {
-            case "01" -> "mdi2w-weather-sunny";
-            case "02" -> "mdi2w-weather-partly-cloudy";
-            case "03" -> "mdi2w-weather-cloudy";
-            case "04" -> "mdi2w-weather-cloudy";
-            case "09" -> "mdi2w-weather-pouring";
-            case "10" -> "mdi2w-weather-rainy";
-            case "11" -> "mdi2w-weather-lightning";
-            case "13" -> "mdi2w-weather-snowy";
-            case "50" -> "mdi2w-weather-fog";
-            default   -> "mdi2w-weather-cloudy";
-        };
-    }
-
-    private String capitalize(String s) {
-        if (s == null || s.isEmpty()) return s;
-        return s.substring(0, 1).toUpperCase() + s.substring(1);
-    }
 }
