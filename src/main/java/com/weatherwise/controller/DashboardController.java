@@ -1,111 +1,186 @@
 package com.weatherwise.controller;
 
-import com.weatherwise.component.HourlyCard;
-import com.weatherwise.component.WeatherCard;
-import com.weatherwise.component.HumidityBarChart;
+import com.weatherwise.model.CurrentWeather;
+import com.weatherwise.service.WeatherService;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 public class DashboardController {
 
-    @FXML private Label locationLabel;
-    @FXML private Label dateLabel;
-    @FXML private Label tempLabel;
-    @FXML private Label conditionLabel;
-    @FXML private Label highLabel;
-    @FXML private Label lowLabel;
-    @FXML private Label feelsLikeLabel;
-    @FXML private FontIcon mainWeatherIcon;
-    @FXML private HBox hourlyContainer;
-    @FXML private HBox detailContainer;
-    @FXML private Pane humidityChartContainer;
+    // ── Labels Cuaca Utama ────────────────────────────────────
+    @FXML private Label labelCity;
+    @FXML private Label labelDate;
+    @FXML private Label labelTemp;
+    @FXML private Label labelCondition;
+    @FXML private Label labelFeelsLike;
+    @FXML private Label labelHigh;
+    @FXML private Label labelLow;
+
+    // ── Labels Detail ─────────────────────────────────────────
+    @FXML private Label labelHumidity;
+    @FXML private Label labelWind;
+    @FXML private Label labelPressure;
+    @FXML private Label labelVisibility;
+
+    // ── Icon Cuaca ────────────────────────────────────────────
+    @FXML private FontIcon iconWeather;
+
+    // ── Status ────────────────────────────────────────────────
+    @FXML private Label labelStatus;
+
+    private final WeatherService weatherService = new WeatherService();
+
+    // Koordinat default: San Francisco
+    private double currentLat = 37.7749;
+    private double currentLon = -122.4194;
 
     @FXML
     public void initialize() {
-        setupDate();
-        setupHourlyForecast();
-        setupDetailCards();
-        setupHumidityChart();
+        showLoading();
+        loadWeatherData(currentLat, currentLon);
     }
 
-    // ── Tanggal hari ini ──────────────────────────────────────
-    private void setupDate() {
-        String today = LocalDate.now().format(
-            DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy")
-        );
-        dateLabel.setText(today);
-    }
+    // ── Load Data dari API ─────────────────────────────────────
+    public void loadWeatherData(double lat, double lon) {
+        this.currentLat = lat;
+        this.currentLon = lon;
 
-    // ── Kartu Prakiraan Per Jam ───────────────────────────────
-    private void setupHourlyForecast() {
-        String[][] hourlyData = {
-            {"Now",  "mdi2w-weather-sunny",        "#f59e0b", "72°"},
-            {"1 PM", "mdi2w-weather-sunny",        "#f59e0b", "74°"},
-            {"2 PM", "mdi2w-weather-partly-cloudy","#64748b", "75°"},
-            {"3 PM", "mdi2w-weather-partly-cloudy","#64748b", "74°"},
-            {"4 PM", "mdi2w-weather-cloudy",       "#94a3b8", "71°"},
-            {"5 PM", "mdi2w-weather-rainy",        "#2b8cee", "68°"},
-            {"6 PM", "mdi2w-weather-rainy",        "#2b8cee", "65°"},
-            {"7 PM", "mdi2w-weather-cloudy",       "#94a3b8", "63°"},
-            {"8 PM", "mdi2w-weather-night",        "#475569", "61°"},
-            {"9 PM", "mdi2w-weather-night",        "#475569", "60°"},
+        Task<CurrentWeather> task = new Task<>() {
+            @Override
+            protected CurrentWeather call() throws Exception {
+                return weatherService.getCurrentWeather(lat, lon);
+            }
         };
 
-        for (int i = 0; i < hourlyData.length; i++) {
-            String[] d = hourlyData[i];
-            boolean isNow = (i == 0);
-            HourlyCard card = new HourlyCard(d[0], d[1], d[2], d[3], isNow);
-            hourlyContainer.getChildren().add(card);
-        }
-    }
-
-    // ── Kartu Detail Cuaca ────────────────────────────────────
-    private void setupDetailCards() {
-        WeatherCard[] cards = {
-            new WeatherCard(
-                "mdi2w-weather-sunny-alert", "#f59e0b",
-                "UV Index", "5",
-                "Moderate — use sunscreen"
-            ),
-            new WeatherCard(
-                "mdi2w-water-percent", "#2b8cee",
-                "Humidity", "62%",
-                "Comfortable range"
-            ),
-            new WeatherCard(
-                "mdi2w-weather-windy", "#06b6d4",
-                "Wind Speed", "12 mph",
-                "From SW direction"
-            ),
-            new WeatherCard(
-                "mdi2w-weather-sunset-up", "#f97316",
-                "Sunrise", "6:42 AM",
-                "Sunset at 6:28 PM"
-            ),
-        };
-
-        detailContainer.getChildren().addAll(cards);
-
-        // Tiap card grow mengisi lebar yang tersedia
-        for (WeatherCard card : cards) {
-            HBox.setHgrow(card, javafx.scene.layout.Priority.ALWAYS);
-        }
-    }
-
-    // ── Bar Chart Humidity Mingguan ───────────────────────────
-    private void setupHumidityChart() {
-        // Ambil lebar container setelah layout selesai
-        humidityChartContainer.widthProperty().addListener((obs, oldVal, newVal) -> {
-            humidityChartContainer.getChildren().clear();
-            HumidityBarChart chart = new HumidityBarChart(
-                newVal.doubleValue(), 128
-            );
-            humidityChartContainer.getChildren().add(chart);
+        task.setOnSucceeded(e -> {
+            CurrentWeather w = task.getValue();
+            updateUI(w);
         });
+
+        task.setOnFailed(e -> {
+            String msg = task.getException().getMessage();
+            System.err.println("❌ Gagal load cuaca: " + msg);
+            showError(msg);
+        });
+
+        new Thread(task).start();
     }
+
+    public void loadWeatherDataByCity(String cityName) {
+        showLoading();
+
+        Task<CurrentWeather> task = new Task<>() {
+            @Override
+            protected CurrentWeather call() throws Exception {
+                return weatherService.getCurrentWeatherByCity(cityName);
+            }
+        };
+
+        task.setOnSucceeded(e -> updateUI(task.getValue()));
+        task.setOnFailed(e -> showError(task.getException().getMessage()));
+
+        new Thread(task).start();
+    }
+
+    // ── Update Semua UI ────────────────────────────────────────
+    private void updateUI(CurrentWeather w) {
+        // Lokasi & Tanggal
+        if (labelCity != null)
+            labelCity.setText(w.getCityName() + ", " + w.getCountry());
+
+        if (labelDate != null) {
+            String date = java.time.LocalDate.now()
+                .format(java.time.format.DateTimeFormatter
+                    .ofPattern("EEEE, MMMM d, yyyy",
+                               java.util.Locale.ENGLISH));
+            labelDate.setText(date);
+        }
+
+        // Suhu
+        if (labelTemp != null)
+            labelTemp.setText(String.valueOf((int) w.getTemperature()));
+
+        if (labelCondition != null)
+            labelCondition.setText(capitalize(w.getCondition()));
+
+        if (labelFeelsLike != null)
+            labelFeelsLike.setText("Feels like " + (int) w.getFeelsLike() + "°C");
+
+        if (labelHigh != null)
+            labelHigh.setText((int) w.getTempMax() + "°");
+
+        if (labelLow != null)
+            labelLow.setText((int) w.getTempMin() + "°");
+
+        // Detail
+        if (labelHumidity != null)
+            labelHumidity.setText(w.getHumidity() + "%");
+
+        if (labelWind != null)
+            labelWind.setText((int) w.getWindSpeed() + " m/s");
+
+        if (labelPressure != null)
+            labelPressure.setText(w.getPressure() + " hPa");
+
+        // Icon cuaca berdasarkan kondisi
+        if (iconWeather != null)
+            iconWeather.setIconLiteral(getWeatherIcon(w.getConditionIcon()));
+
+        // Sembunyikan status
+        if (labelStatus != null)
+            labelStatus.setVisible(false);
+
+        System.out.println("✅ Data cuaca berhasil dimuat: "
+            + w.getCityName() + " " + (int) w.getTemperature() + "°C");
+    }
+
+    // ── State Helpers ──────────────────────────────────────────
+    private void showLoading() {
+        if (labelStatus != null) {
+            labelStatus.setText("⏳ Memuat data cuaca...");
+            labelStatus.setVisible(true);
+        }
+        if (labelCity != null) labelCity.setText("Memuat...");
+        if (labelTemp != null) labelTemp.setText("--");
+        if (labelCondition != null) labelCondition.setText("--");
+    }
+
+    private void showError(String message) {
+        if (labelStatus != null) {
+            labelStatus.setText("❌ " + (message != null ? message : "Terjadi kesalahan"));
+            labelStatus.setVisible(true);
+        }
+        if (labelCity != null) labelCity.setText("Gagal memuat data");
+        if (labelTemp != null) labelTemp.setText("--");
+    }
+
+    // ── Mapping Icon OWM → Ikonli ──────────────────────────────
+    private String getWeatherIcon(String owmIcon) {
+        if (owmIcon == null) return "mdi2w-weather-cloudy";
+        return switch (owmIcon.substring(0, 2)) {
+            case "01" -> "mdi2w-weather-sunny";           // Clear sky
+            case "02" -> "mdi2w-weather-partly-cloudy";   // Few clouds
+            case "03" -> "mdi2w-weather-cloudy";          // Scattered clouds
+            case "04" -> "mdi2w-weather-cloudy";          // Broken clouds
+            case "09" -> "mdi2w-weather-pouring";         // Shower rain
+            case "10" -> "mdi2w-weather-rainy";           // Rain
+            case "11" -> "mdi2w-weather-lightning";       // Thunderstorm
+            case "13" -> "mdi2w-weather-snowy";           // Snow
+            case "50" -> "mdi2w-weather-fog";             // Mist
+            default   -> "mdi2w-weather-cloudy";
+        };
+    }
+
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    // Getter koordinat (dipakai controller lain)
+    public double getCurrentLat() { return currentLat; }
+    public double getCurrentLon() { return currentLon; }
 }

@@ -9,5 +9,10 @@ C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weath
 C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\controller\RadarMapController.java
 C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\controller\SettingsController.java
 C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\Launcher.java
+C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\model\CurrentWeather.java
 C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\model\ForecastDay.java
+C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\model\Location.java
+C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\service\GeocodingService.java
+C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\service\WeatherService.java
+C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\com\weatherwise\util\AppConfig.java
 C:\Users\Nicholas\Documents\NetBeansProjects\WeatherWise\src\main\java\module-info.java

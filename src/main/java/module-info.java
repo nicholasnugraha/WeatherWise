@@ -7,6 +7,7 @@ module com.weatherwise {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.ikonli.materialdesign2;
     requires com.fasterxml.jackson.databind;
+    requires org.json;
 
     opens com.weatherwise to javafx.graphics, javafx.fxml;
     opens com.weatherwise.controller to javafx.fxml;

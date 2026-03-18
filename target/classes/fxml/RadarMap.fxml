@@ -9,7 +9,10 @@
            xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.weatherwise.controller.RadarMapController"
            maxWidth="Infinity"
-           maxHeight="Infinity">
+           maxHeight="Infinity"
+           prefWidth="-1"
+           prefHeight="-1">
+
 
     <!-- ══ 1. PETA UTAMA ══ -->
     <WebView fx:id="mapWebView"

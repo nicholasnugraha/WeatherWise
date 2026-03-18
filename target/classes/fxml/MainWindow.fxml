@@ -69,31 +69,6 @@
                                       -fx-font-size: 13px;
                                       -fx-pref-width: 160;"/>
                 </HBox>
-
-                <!-- Icon Notifikasi -->
-                <Button onAction="#handleNotification"
-                        style="-fx-background-color: #f1f5f9;
-                               -fx-background-radius: 8;
-                               -fx-cursor: hand;
-                               -fx-padding: 8;">
-                    <graphic>
-                        <FontIcon iconLiteral="mdi2b-bell-outline"
-                                  iconSize="20"
-                                  iconColor="#475569"/>
-                    </graphic>
-                </Button>
-
-                <!-- Icon Profil -->
-                <Button style="-fx-background-color: #2b8cee22;
-                               -fx-background-radius: 20;
-                               -fx-cursor: hand;
-                               -fx-padding: 8;">
-                    <graphic>
-                        <FontIcon iconLiteral="mdi2a-account-circle"
-                                  iconSize="22"
-                                  iconColor="#2b8cee"/>
-                    </graphic>
-                </Button>
             </HBox>
 
         </HBox>
@@ -180,24 +155,6 @@
 
                 <!-- Spacer dorong Sign Out ke bawah -->
                 <Region VBox.vgrow="ALWAYS"/>
-
-                <!-- Sign Out -->
-                <Button text="  Sign Out"
-                        maxWidth="Infinity"
-                        alignment="CENTER_LEFT"
-                        onAction="#handleSignOut"
-                        style="-fx-background-color: transparent;
-                               -fx-text-fill: #94a3b8;
-                               -fx-font-size: 13px;
-                               -fx-cursor: hand;
-                               -fx-padding: 10 14 10 14;
-                               -fx-background-radius: 8;">
-                    <graphic>
-                        <FontIcon iconLiteral="mdi2l-logout"
-                                  iconSize="20"
-                                  iconColor="#94a3b8"/>
-                    </graphic>
-                </Button>
 
             </VBox>
 

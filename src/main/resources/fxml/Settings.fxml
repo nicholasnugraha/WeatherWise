@@ -2,13 +2,425 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
+<?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.weatherwise.controller.SettingsController"
-      alignment="CENTER" spacing="16"
-      style="-fx-background-color: #f6f7f8; -fx-padding: 40;">
-    <FontIcon iconLiteral="mdi2c-cog-outline" iconSize="64" iconColor="#64748b"/>
-    <Label text="Settings" style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
-    <Label text="Halaman ini akan diisi di Fase 6" style="-fx-text-fill: #64748b;"/>
-</VBox>
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.weatherwise.controller.SettingsController"
+            fitToWidth="true"
+            style="-fx-background-color: #f6f7f8; -fx-background: #f6f7f8;"
+            maxWidth="Infinity"
+            maxHeight="Infinity">
+
+    <VBox spacing="0" maxWidth="Infinity">
+
+        <!-- ══ HEADER ══ -->
+        <VBox style="-fx-background-color: white;
+                     -fx-border-color: transparent transparent #e2e8f0 transparent;
+                     -fx-border-width: 0 0 1 0;"
+              spacing="4">
+            <VBox.margin><Insets top="28" right="32" bottom="20" left="32"/></VBox.margin>
+            <Label text="Pengaturan &amp; Lokasi"
+                   style="-fx-font-size: 26px; -fx-font-weight: bold;
+                          -fx-text-fill: #0f172a;"/>
+            <Label text="Kelola lokasi favorit dan preferensi tampilan cuaca."
+                   style="-fx-font-size: 13px; -fx-text-fill: #64748b;"/>
+        </VBox>
+
+        <!-- ══ KONTEN UTAMA ══ -->
+        <HBox spacing="24" maxWidth="Infinity">
+            <VBox.margin><Insets top="24" right="32" bottom="32" left="32"/></VBox.margin>
+
+            <!-- ── KOLOM KIRI: Lokasi ── -->
+            <VBox spacing="16" HBox.hgrow="ALWAYS" maxWidth="Infinity">
+
+                <!-- Judul -->
+                <Label text="Lokasi"
+                       style="-fx-font-size: 18px; -fx-font-weight: bold;
+                              -fx-text-fill: #0f172a;"/>
+                <Label text="Cari dan kelola kota favorit kamu."
+                       style="-fx-font-size: 12px; -fx-text-fill: #64748b;
+                              -fx-padding: -12 0 0 0;"/>
+
+                <!-- Search Bar -->
+                <HBox alignment="CENTER_LEFT" spacing="0"
+                      style="-fx-background-color: white;
+                             -fx-background-radius: 12;
+                             -fx-border-color: #e2e8f0;
+                             -fx-border-radius: 12;
+                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.05),8,0,0,2);">
+                    <HBox.margin><Insets top="4"/></HBox.margin>
+                    <StackPane minWidth="44" minHeight="44">
+                        <FontIcon iconLiteral="mdi2m-magnify"
+                                  iconSize="18" iconColor="#94a3b8"/>
+                    </StackPane>
+                    <TextField fx:id="searchField"
+                               promptText="Cari kota atau bandara... mis. Tokyo, JP"
+                               onAction="#handleSearch"
+                               style="-fx-background-color: transparent;
+                                      -fx-border-color: transparent;
+                                      -fx-font-size: 13px;
+                                      -fx-text-fill: #0f172a;"
+                               HBox.hgrow="ALWAYS"/>
+                    <Button onAction="#handleSearch"
+                            prefWidth="80" prefHeight="36"
+                            style="-fx-background-color: #2b8cee;
+                                   -fx-text-fill: white;
+                                   -fx-font-weight: bold;
+                                   -fx-font-size: 12px;
+                                   -fx-background-radius: 0 10 10 0;
+                                   -fx-cursor: hand;">
+                        <HBox.margin><Insets right="4"/></HBox.margin>
+                        <graphic>
+                            <FontIcon iconLiteral="mdi2m-magnify"
+                                      iconSize="14" iconColor="white"/>
+                        </graphic>
+                    </Button>
+                </HBox>
+
+                <!-- Label Pinned -->
+                <Label text="LOKASI TERSIMPAN"
+                       style="-fx-font-size: 10px; -fx-font-weight: bold;
+                              -fx-text-fill: #94a3b8;
+                              -fx-padding: 8 0 0 0;"/>
+
+                <!-- Card Lokasi 1 -->
+                <HBox alignment="CENTER_LEFT" spacing="14"
+                      style="-fx-background-color: white;
+                             -fx-background-radius: 14;
+                             -fx-padding: 14 16 14 16;
+                             -fx-border-color: transparent;
+                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),10,0,0,2);">
+                    <StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48"
+                               style="-fx-background-color: #eff6ff;
+                                      -fx-background-radius: 10;">
+                        <FontIcon iconLiteral="mdi2w-weather-cloudy"
+                                  iconSize="22" iconColor="#2b8cee"/>
+                    </StackPane>
+                    <VBox spacing="3" HBox.hgrow="ALWAYS">
+                        <Label text="London, UK"
+                               style="-fx-font-size: 14px; -fx-font-weight: bold;
+                                      -fx-text-fill: #0f172a;"/>
+                        <Label text="Mostly Cloudy · 10:24 AM"
+                               style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
+                    </VBox>
+                    <VBox alignment="CENTER_RIGHT" spacing="2">
+                        <Label text="12°C"
+                               style="-fx-font-size: 20px; -fx-font-weight: bold;
+                                      -fx-text-fill: #0f172a;"/>
+                        <Label text="H14 · L8"
+                               style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/>
+                    </VBox>
+                    <Button style="-fx-background-color: transparent;
+                                   -fx-cursor: hand; -fx-padding: 4;">
+                        <graphic>
+                            <FontIcon iconLiteral="mdi2d-delete-outline"
+                                      iconSize="18" iconColor="#cbd5e1"/>
+                        </graphic>
+                    </Button>
+                </HBox>
+
+                <!-- Card Lokasi 2 -->
+                <HBox alignment="CENTER_LEFT" spacing="14"
+                      style="-fx-background-color: white;
+                             -fx-background-radius: 14;
+                             -fx-padding: 14 16 14 16;
+                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),10,0,0,2);">
+                    <StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48"
+                               style="-fx-background-color: #fff7ed;
+                                      -fx-background-radius: 10;">
+                        <FontIcon iconLiteral="mdi2w-weather-sunny"
+                                  iconSize="22" iconColor="#f97316"/>
+                    </StackPane>
+                    <VBox spacing="3" HBox.hgrow="ALWAYS">
+                        <Label text="Los Angeles, US"
+                               style="-fx-font-size: 14px; -fx-font-weight: bold;
+                                      -fx-text-fill: #0f172a;"/>
+                        <Label text="Sunny · 02:24 AM"
+                               style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
+                    </VBox>
+                    <VBox alignment="CENTER_RIGHT" spacing="2">
+                        <Label text="24°C"
+                               style="-fx-font-size: 20px; -fx-font-weight: bold;
+                                      -fx-text-fill: #0f172a;"/>
+                        <Label text="H28 · L19"
+                               style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/>
+                    </VBox>
+                    <Button style="-fx-background-color: transparent;
+                                   -fx-cursor: hand; -fx-padding: 4;">
+                        <graphic>
+                            <FontIcon iconLiteral="mdi2d-delete-outline"
+                                      iconSize="18" iconColor="#cbd5e1"/>
+                        </graphic>
+                    </Button>
+                </HBox>
+
+                <!-- Card Lokasi 3 -->
+                <HBox alignment="CENTER_LEFT" spacing="14"
+                      style="-fx-background-color: white;
+                             -fx-background-radius: 14;
+                             -fx-padding: 14 16 14 16;
+                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.06),10,0,0,2);">
+                    <StackPane minWidth="48" minHeight="48" maxWidth="48" maxHeight="48"
+                               style="-fx-background-color: #eff6ff;
+                                      -fx-background-radius: 10;">
+                        <FontIcon iconLiteral="mdi2w-weather-rainy"
+                                  iconSize="22" iconColor="#2b8cee"/>
+                    </StackPane>
+                    <VBox spacing="3" HBox.hgrow="ALWAYS">
+                        <Label text="Tokyo, JP"
+                               style="-fx-font-size: 14px; -fx-font-weight: bold;
+                                      -fx-text-fill: #0f172a;"/>
+                        <Label text="Light Rain · 06:24 PM"
+                               style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
+                    </VBox>
+                    <VBox alignment="CENTER_RIGHT" spacing="2">
+                        <Label text="18°C"
+                               style="-fx-font-size: 20px; -fx-font-weight: bold;
+                                      -fx-text-fill: #0f172a;"/>
+                        <Label text="H20 · L16"
+                               style="-fx-font-size: 10px; -fx-text-fill: #94a3b8;"/>
+                    </VBox>
+                    <Button style="-fx-background-color: transparent;
+                                   -fx-cursor: hand; -fx-padding: 4;">
+                        <graphic>
+                            <FontIcon iconLiteral="mdi2d-delete-outline"
+                                      iconSize="18" iconColor="#cbd5e1"/>
+                        </graphic>
+                    </Button>
+                </HBox>
+
+            </VBox>
+
+            <!-- ── KOLOM KANAN: Settings ── -->
+            <VBox spacing="16" prefWidth="380" minWidth="340">
+
+                <!-- Judul -->
+                <Label text="Pengaturan"
+                       style="-fx-font-size: 18px; -fx-font-weight: bold;
+                              -fx-text-fill: #0f172a;"/>
+                <Label text="Sesuaikan pengalaman cuaca kamu."
+                       style="-fx-font-size: 12px; -fx-text-fill: #64748b;
+                              -fx-padding: -12 0 0 0;"/>
+
+                <!-- Settings Card -->
+                <VBox spacing="0"
+                      style="-fx-background-color: white;
+                             -fx-background-radius: 16;
+                             -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.07),12,0,0,3);">
+
+                    <!-- ─ Satuan Pengukuran ─ -->
+                    <VBox spacing="14"
+                          style="-fx-padding: 20 20 20 20;">
+
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <StackPane minWidth="32" minHeight="32" maxWidth="32" maxHeight="32"
+                                       style="-fx-background-color: #eff6ff;
+                                              -fx-background-radius: 8;">
+                                <FontIcon iconLiteral="mdi2r-ruler"
+                                          iconSize="16" iconColor="#2b8cee"/>
+                            </StackPane>
+                            <Label text="Satuan Pengukuran"
+                                   style="-fx-font-size: 14px; -fx-font-weight: bold;
+                                          -fx-text-fill: #0f172a;"/>
+                        </HBox>
+
+                        <!-- Suhu -->
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <Label text="Suhu" minWidth="80"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #475569;"/>
+                            <HBox spacing="0"
+                                  style="-fx-background-color: #f1f5f9;
+                                         -fx-background-radius: 10;
+                                         -fx-padding: 4;">
+                                <Button fx:id="btnCelsius" text="Celsius"
+                                        onAction="#handleCelsius"
+                                        prefHeight="30" prefWidth="80"
+                                        style="-fx-background-color: #2b8cee;
+                                               -fx-text-fill: white;
+                                               -fx-font-weight: bold;
+                                               -fx-font-size: 12px;
+                                               -fx-background-radius: 8;
+                                               -fx-cursor: hand;"/>
+                                <Button fx:id="btnFahrenheit" text="Fahrenheit"
+                                        onAction="#handleFahrenheit"
+                                        prefHeight="30" prefWidth="90"
+                                        style="-fx-background-color: transparent;
+                                               -fx-text-fill: #64748b;
+                                               -fx-font-size: 12px;
+                                               -fx-background-radius: 8;
+                                               -fx-cursor: hand;"/>
+                            </HBox>
+                        </HBox>
+
+                        <!-- Angin -->
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <Label text="Kecepatan Angin" minWidth="80"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #475569;"/>
+                            <HBox spacing="0"
+                                  style="-fx-background-color: #f1f5f9;
+                                         -fx-background-radius: 10;
+                                         -fx-padding: 4;">
+                                <Button fx:id="btnKmh" text="km/h"
+                                        onAction="#handleKmh"
+                                        prefHeight="30" prefWidth="70"
+                                        style="-fx-background-color: transparent;
+                                               -fx-text-fill: #64748b;
+                                               -fx-font-size: 12px;
+                                               -fx-background-radius: 8;
+                                               -fx-cursor: hand;"/>
+                                <Button fx:id="btnMph" text="mph"
+                                        onAction="#handleMph"
+                                        prefHeight="30" prefWidth="70"
+                                        style="-fx-background-color: #2b8cee;
+                                               -fx-text-fill: white;
+                                               -fx-font-weight: bold;
+                                               -fx-font-size: 12px;
+                                               -fx-background-radius: 8;
+                                               -fx-cursor: hand;"/>
+                            </HBox>
+                        </HBox>
+
+                        <!-- Tekanan -->
+                        <HBox alignment="CENTER_LEFT" spacing="12">
+                            <Label text="Tekanan" minWidth="80"
+                                   style="-fx-font-size: 12px; -fx-text-fill: #475569;"/>
+                            <HBox spacing="0"
+                                  style="-fx-background-color: #f1f5f9;
+                                         -fx-background-radius: 10;
+                                         -fx-padding: 4;">
+                                <Button fx:id="btnHpa" text="hPa"
+                                        onAction="#handleHpa"
+                                        prefHeight="30" prefWidth="70"
+                                        style="-fx-background-color: #2b8cee;
+                                               -fx-text-fill: white;
+                                               -fx-font-weight: bold;
+                                               -fx-font-size: 12px;
+                                               -fx-background-radius: 8;
+                                               -fx-cursor: hand;"/>
+                                <Button fx:id="btnInhg" text="inHg"
+                                        onAction="#handleInhg"
+                                        prefHeight="30" prefWidth="70"
+                                        style="-fx-background-color: transparent;
+                                               -fx-text-fill: #64748b;
+                                               -fx-font-size: 12px;
+                                               -fx-background-radius: 8;
+                                               -fx-cursor: hand;"/>
+                            </HBox>
+                        </HBox>
+
+                    </VBox>
+
+                    <Separator style="-fx-background-color: #f1f5f9;"/>
+
+
+                    <!-- ─ Tampilan ─ -->
+                    <VBox spacing="14"
+                          style="-fx-padding: 20 20 20 20;">
+
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <StackPane minWidth="32" minHeight="32" maxWidth="32" maxHeight="32"
+                                       style="-fx-background-color: #eff6ff;
+                                              -fx-background-radius: 8;">
+                                <FontIcon iconLiteral="mdi2p-palette-outline"
+                                          iconSize="16" iconColor="#2b8cee"/>
+                            </StackPane>
+                            <Label text="Tampilan"
+                                   style="-fx-font-size: 14px; -fx-font-weight: bold;
+                                          -fx-text-fill: #0f172a;"/>
+                        </HBox>
+
+                        <HBox spacing="10">
+                            <!-- Light -->
+                            <Button fx:id="btnThemeLight" onAction="#handleThemeLight"
+                                    prefWidth="100" prefHeight="72"
+                                    style="-fx-background-color: #eff6ff;
+                                           -fx-border-color: #2b8cee; -fx-border-width: 2;
+                                           -fx-border-radius: 12; -fx-background-radius: 12;
+                                           -fx-cursor: hand;">
+                                <graphic>
+                                    <VBox alignment="CENTER" spacing="6">
+                                        <FontIcon iconLiteral="mdi2w-white-balance-sunny"
+                                                  iconSize="22" iconColor="#2b8cee"/>
+                                        <Label text="Light"
+                                               style="-fx-font-size: 11px;
+                                                      -fx-font-weight: bold;
+                                                      -fx-text-fill: #2b8cee;"/>
+                                    </VBox>
+                                </graphic>
+                            </Button>
+                            <!-- Dark -->
+                            <Button fx:id="btnThemeDark" onAction="#handleThemeDark"
+                                    prefWidth="100" prefHeight="72"
+                                    style="-fx-background-color: #f1f5f9;
+                                           -fx-border-color: transparent; -fx-border-width: 2;
+                                           -fx-border-radius: 12; -fx-background-radius: 12;
+                                           -fx-cursor: hand;">
+                                <graphic>
+                                    <VBox alignment="CENTER" spacing="6">
+                                        <FontIcon iconLiteral="mdi2w-weather-night"
+                                                  iconSize="22" iconColor="#475569"/>
+                                        <Label text="Dark"
+                                               style="-fx-font-size: 11px;
+                                                      -fx-font-weight: bold;
+                                                      -fx-text-fill: #475569;"/>
+                                    </VBox>
+                                </graphic>
+                            </Button>
+                            <!-- System -->
+                            <Button fx:id="btnThemeSystem" onAction="#handleThemeSystem"
+                                    prefWidth="100" prefHeight="72"
+                                    style="-fx-background-color: #f1f5f9;
+                                           -fx-border-color: transparent; -fx-border-width: 2;
+                                           -fx-border-radius: 12; -fx-background-radius: 12;
+                                           -fx-cursor: hand;">
+                                <graphic>
+                                    <VBox alignment="CENTER" spacing="6">
+                                        <FontIcon iconLiteral="mdi2c-contrast-circle"
+                                                  iconSize="22" iconColor="#475569"/>
+                                        <Label text="System"
+                                               style="-fx-font-size: 11px;
+                                                      -fx-font-weight: bold;
+                                                      -fx-text-fill: #475569;"/>
+                                    </VBox>
+                                </graphic>
+                            </Button>
+                        </HBox>
+
+                    </VBox>
+
+                    <!-- ─ Tombol Simpan ─ -->
+                    <VBox style="-fx-padding: 0 20 20 20;">
+                        <Button text="Simpan Semua Perubahan"
+                                onAction="#handleSaveSettings"
+                                maxWidth="Infinity"
+                                prefHeight="44"
+                                style="-fx-background-color: #2b8cee;
+                                       -fx-text-fill: white;
+                                       -fx-font-weight: bold;
+                                       -fx-font-size: 13px;
+                                       -fx-background-radius: 12;
+                                       -fx-cursor: hand;
+                                       -fx-effect: dropshadow(gaussian,rgba(43,140,238,0.4),12,0,0,3);"/>
+                    </VBox>
+
+                </VBox>
+
+                <!-- Footer Links -->
+                <HBox alignment="CENTER" spacing="20">
+                    <Label text="Help Center"
+                           style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;
+                                  -fx-cursor: hand;"/>
+                    <Label text="Privacy Policy"
+                           style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;
+                                  -fx-cursor: hand;"/>
+                    <Label text="Terms of Service"
+                           style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;
+                                  -fx-cursor: hand;"/>
+                </HBox>
+
+            </VBox>
+        </HBox>
+    </VBox>
+
+</ScrollPane>
