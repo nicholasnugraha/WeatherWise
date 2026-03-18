@@ -19,7 +19,7 @@ public class GeocodingService {
         String urlStr  = AppConfig.GEO_URL + "/direct"
                 + "?q="     + encoded
                 + "&limit=5"
-                + "&appid=" + AppConfig.OWM_API_KEY;
+                + "&appid=" + AppConfig.getApiKey();
 
         String response = fetchUrl(urlStr);
         return parseLocations(new JSONArray(response));
@@ -40,23 +40,30 @@ public class GeocodingService {
         return result;
     }
 
+    // ── HTTP Helper — dengan try-finally untuk cegah resource leak ──
     private String fetchUrl(String urlStr) throws Exception {
-        URL               url  = new URL(urlStr);
+        URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("GET");
-        conn.setConnectTimeout(10000);
-        conn.setReadTimeout(10000);
+        conn.setConnectTimeout(AppConfig.TIMEOUT_SEC * 1000);
+        conn.setReadTimeout(AppConfig.TIMEOUT_SEC * 1000);
+        conn.setRequestProperty("Accept", "application/json");
 
-        if (conn.getResponseCode() != 200)
-            throw new Exception("Geocoding error: " + conn.getResponseCode());
+        try {
+            int status = conn.getResponseCode();
+            if (status == 401) throw new Exception("API Key tidak valid!");
+            if (status == 404) throw new Exception("Kota tidak ditemukan!");
+            if (status != 200) throw new Exception("Geocoding error: " + status);
 
-        BufferedReader reader = new BufferedReader(
-            new InputStreamReader(conn.getInputStream()));
-        StringBuilder sb = new StringBuilder();
-        String line;
-        while ((line = reader.readLine()) != null) sb.append(line);
-        reader.close();
-        conn.disconnect();
-        return sb.toString();
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) sb.append(line);
+            reader.close();
+            return sb.toString();
+        } finally {
+            conn.disconnect();
+        }
     }
 }

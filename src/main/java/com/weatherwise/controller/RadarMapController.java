@@ -12,51 +12,41 @@ import java.util.List;
 
 public class RadarMapController {
 
-    @FXML
-    private WebView mapWebView;
-    @FXML
-    private Button btnPrecipitation;
-    @FXML
-    private Button btnClouds;
-    @FXML
-    private Button btnWind;
-    @FXML
-    private Button btnTemp;
+    @FXML private WebView mapWebView;
+    @FXML private Button  btnPrecipitation;
+    @FXML private Button  btnClouds;
+    @FXML private Button  btnWind;
+    @FXML private Button  btnTemp;
 
-    private WebEngine webEngine;
+    private WebEngine    webEngine;
     private List<Button> layerButtons;
-    private boolean pageLoaded = false;
-    private boolean mapInited = false;
+    private boolean      pageLoaded = false;
+    private boolean      mapInited  = false;
 
     @FXML
     public void initialize() {
-        webEngine = mapWebView.getEngine();
-        layerButtons = List.of(btnPrecipitation, btnClouds,
-                btnWind, btnTemp);
+        webEngine    = mapWebView.getEngine();
+        layerButtons = List.of(btnPrecipitation, btnClouds, btnWind, btnTemp);
 
         mapWebView.setMinSize(100, 100);
         mapWebView.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
         loadMap();
 
-        // Tunggu Scene tersedia, lalu gunakan Scene size
         mapWebView.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
-                // Scene sudah ada — tunggu window tampil
                 newScene.windowProperty().addListener((obsW, oldW, newW) -> {
                     if (newW != null) {
-                        // Window sudah ada — delay sedikit lalu init
-                        new Thread(() -> {
-                            try {
-                                Thread.sleep(500);
-                            } catch (InterruptedException ignored) {
-                            }
+                        // Gunakan daemon thread agar JVM bisa shutdown normal
+                        Thread t = new Thread(() -> {
+                            try { Thread.sleep(500); }
+                            catch (InterruptedException ignored) { Thread.currentThread().interrupt(); }
                             Platform.runLater(() -> {
-                                if (pageLoaded && !mapInited) {
-                                    callInitMap();
-                                }
+                                if (pageLoaded && !mapInited) callInitMap();
                             });
-                        }).start();
+                        });
+                        t.setDaemon(true);
+                        t.start();
                     }
                 });
             }
@@ -67,26 +57,20 @@ public class RadarMapController {
         double w = mapWebView.getWidth();
         double h = mapWebView.getHeight();
 
-        // Fallback ke scene size jika WebView belum punya ukuran
         if (w <= 0 && mapWebView.getScene() != null) {
             w = mapWebView.getScene().getWidth();
-            h = mapWebView.getScene().getHeight() - 120; // kurangi bottom bar
+            h = mapWebView.getScene().getHeight() - 120;
         }
-
-        if (w <= 0) {
-            w = 1200;
-        }
-        if (h <= 0) {
-            h = 700;
-        }
+        if (w <= 0) w = 1200;
+        if (h <= 0) h = 700;
 
         mapInited = true;
         final double fw = w, fh = h;
-        System.out.println("🗺️ initMap dengan ukuran: " + fw + "x" + fh);
+        System.out.println("\uD83D\uDDFA\uFE0F initMap dengan ukuran: " + fw + "x" + fh);
 
         webEngine.executeScript(
-                "document.getElementById('map').style.width='" + (int) fw + "px';"
-                + "document.getElementById('map').style.height='" + (int) fh + "px';"
+            "document.getElementById('map').style.width='"  + (int) fw + "px';"
+          + "document.getElementById('map').style.height='" + (int) fh + "px';"
         );
         webEngine.executeScript("initMap();");
     }
@@ -94,58 +78,42 @@ public class RadarMapController {
     private void loadMap() {
         URL mapUrl = getClass().getResource("/map/radar_map.html");
         if (mapUrl == null) {
-            System.err.println("❌ radar_map.html tidak ditemukan!");
+            System.err.println("\u274c radar_map.html tidak ditemukan!");
             return;
         }
 
         webEngine.load(mapUrl.toExternalForm());
 
         webEngine.getLoadWorker().stateProperty().addListener(
-                (obs, oldState, newState) -> {
-                    if (newState == Worker.State.SUCCEEDED && !pageLoaded) {
-                        pageLoaded = true;
-                        System.out.println("✅ HTML loaded.");
-
-                        // Cek apakah layout bounds sudah ada
-                        Platform.runLater(() -> {
-                            double w = mapWebView.getLayoutBounds().getWidth();
-                            double h = mapWebView.getLayoutBounds().getHeight();
-
-                            if (w > 0 && h > 0 && !mapInited) {
-                                mapInited = true;
-                                System.out.println("📐 Bounds saat load: " + w + "x" + h);
-                                webEngine.executeScript(
-                                        "document.getElementById('map').style.width='" + (int) w + "px';"
-                                        + "document.getElementById('map').style.height='" + (int) h + "px';"
-                                );
-                                webEngine.executeScript("initMap();");
-                            }
-                        });
-                    }
+            (obs, oldState, newState) -> {
+                if (newState == Worker.State.SUCCEEDED && !pageLoaded) {
+                    pageLoaded = true;
+                    System.out.println("\u2705 HTML loaded.");
+                    Platform.runLater(() -> {
+                        double w = mapWebView.getLayoutBounds().getWidth();
+                        double h = mapWebView.getLayoutBounds().getHeight();
+                        if (w > 0 && h > 0 && !mapInited) {
+                            mapInited = true;
+                            System.out.println("\uD83D\uDC90 Bounds saat load: " + w + "x" + h);
+                            webEngine.executeScript(
+                                "document.getElementById('map').style.width='"  + (int) w + "px';"
+                              + "document.getElementById('map').style.height='" + (int) h + "px';"
+                            );
+                            webEngine.executeScript("initMap();");
+                        }
+                    });
                 }
+            }
         );
     }
 
     private void execJS(String script) {
-        if (pageLoaded) {
-            Platform.runLater(() -> webEngine.executeScript(script));
-        }
+        if (pageLoaded) Platform.runLater(() -> webEngine.executeScript(script));
     }
 
-    @FXML
-    private void handleZoomIn() {
-        execJS("zoomIn();");
-    }
-
-    @FXML
-    private void handleZoomOut() {
-        execJS("zoomOut();");
-    }
-
-    @FXML
-    private void handleMyLocation() {
-        execJS("goToCurrentLocation();");
-    }
+    @FXML private void handleZoomIn()            { execJS("zoomIn();"); }
+    @FXML private void handleZoomOut()           { execJS("zoomOut();"); }
+    @FXML private void handleMyLocation()        { execJS("goToCurrentLocation();"); }
 
     @FXML
     private void handleLayerPrecipitation() {
@@ -171,13 +139,8 @@ public class RadarMapController {
         setActiveLayer(btnTemp);
     }
 
-    @FXML
-    private void handleLayers() {
-    }
-
-    @FXML
-    private void handleShare() {
-    }
+    @FXML private void handleLayers() {}
+    @FXML private void handleShare()  {}
 
     private void setActiveLayer(Button activeBtn) {
         String normal = "-fx-background-color: rgba(255,255,255,0.92);"

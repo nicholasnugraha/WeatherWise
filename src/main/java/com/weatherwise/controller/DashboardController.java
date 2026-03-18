@@ -2,11 +2,10 @@ package com.weatherwise.controller;
 
 import com.weatherwise.model.CurrentWeather;
 import com.weatherwise.service.WeatherService;
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 public class DashboardController {
@@ -34,9 +33,9 @@ public class DashboardController {
 
     private final WeatherService weatherService = new WeatherService();
 
-    // Koordinat default: San Francisco
-    private double currentLat = 37.7749;
-    private double currentLon = -122.4194;
+    // Koordinat default: Jakarta, Indonesia
+    private double currentLat = -6.2088;
+    private double currentLon = 106.8456;
 
     @FXML
     public void initialize() {
@@ -56,18 +55,18 @@ public class DashboardController {
             }
         };
 
-        task.setOnSucceeded(e -> {
-            CurrentWeather w = task.getValue();
-            updateUI(w);
-        });
-
+        task.setOnSucceeded(e -> updateUI(task.getValue()));
         task.setOnFailed(e -> {
-            String msg = task.getException().getMessage();
-            System.err.println("❌ Gagal load cuaca: " + msg);
-            showError(msg);
+            String msg = task.getException() != null
+                    ? task.getException().getMessage()
+                    : "Terjadi kesalahan tidak diketahui";
+            System.err.println("\u274c Gagal load cuaca: " + msg);
+            Platform.runLater(() -> showError(msg));
         });
 
-        new Thread(task).start();
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
     }
 
     public void loadWeatherDataByCity(String cityName) {
@@ -81,14 +80,20 @@ public class DashboardController {
         };
 
         task.setOnSucceeded(e -> updateUI(task.getValue()));
-        task.setOnFailed(e -> showError(task.getException().getMessage()));
+        task.setOnFailed(e -> {
+            String msg = task.getException() != null
+                    ? task.getException().getMessage()
+                    : "Terjadi kesalahan tidak diketahui";
+            Platform.runLater(() -> showError(msg));
+        });
 
-        new Thread(task).start();
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
     }
 
     // ── Update Semua UI ────────────────────────────────────────
     private void updateUI(CurrentWeather w) {
-        // Lokasi & Tanggal
         if (labelCity != null)
             labelCity.setText(w.getCityName() + ", " + w.getCountry());
 
@@ -100,7 +105,6 @@ public class DashboardController {
             labelDate.setText(date);
         }
 
-        // Suhu
         if (labelTemp != null)
             labelTemp.setText(String.valueOf((int) w.getTemperature()));
 
@@ -108,15 +112,14 @@ public class DashboardController {
             labelCondition.setText(capitalize(w.getCondition()));
 
         if (labelFeelsLike != null)
-            labelFeelsLike.setText("Feels like " + (int) w.getFeelsLike() + "°C");
+            labelFeelsLike.setText("Feels like " + (int) w.getFeelsLike() + "\u00b0C");
 
         if (labelHigh != null)
-            labelHigh.setText((int) w.getTempMax() + "°");
+            labelHigh.setText((int) w.getTempMax() + "\u00b0");
 
         if (labelLow != null)
-            labelLow.setText((int) w.getTempMin() + "°");
+            labelLow.setText((int) w.getTempMin() + "\u00b0");
 
-        // Detail
         if (labelHumidity != null)
             labelHumidity.setText(w.getHumidity() + "%");
 
@@ -126,51 +129,55 @@ public class DashboardController {
         if (labelPressure != null)
             labelPressure.setText(w.getPressure() + " hPa");
 
-        // Icon cuaca berdasarkan kondisi
+        // Visibility: tampilkan dalam km (data dari OWM dalam meter)
+        if (labelVisibility != null)
+            labelVisibility.setText(w.getVisibilityDisplay());
+
         if (iconWeather != null)
             iconWeather.setIconLiteral(getWeatherIcon(w.getConditionIcon()));
 
-        // Sembunyikan status
         if (labelStatus != null)
             labelStatus.setVisible(false);
 
-        System.out.println("✅ Data cuaca berhasil dimuat: "
-            + w.getCityName() + " " + (int) w.getTemperature() + "°C");
+        System.out.println("\u2705 Data cuaca berhasil dimuat: "
+            + w.getCityName() + " " + (int) w.getTemperature() + "\u00b0C");
     }
 
     // ── State Helpers ──────────────────────────────────────────
     private void showLoading() {
         if (labelStatus != null) {
-            labelStatus.setText("⏳ Memuat data cuaca...");
+            labelStatus.setText("\u23f3 Memuat data cuaca...");
             labelStatus.setVisible(true);
         }
-        if (labelCity != null) labelCity.setText("Memuat...");
-        if (labelTemp != null) labelTemp.setText("--");
+        if (labelCity != null)      labelCity.setText("Memuat...");
+        if (labelTemp != null)      labelTemp.setText("--");
         if (labelCondition != null) labelCondition.setText("--");
+        if (labelVisibility != null) labelVisibility.setText("--");
     }
 
     private void showError(String message) {
         if (labelStatus != null) {
-            labelStatus.setText("❌ " + (message != null ? message : "Terjadi kesalahan"));
+            labelStatus.setText("\u274c " + (message != null ? message : "Terjadi kesalahan"));
             labelStatus.setVisible(true);
         }
         if (labelCity != null) labelCity.setText("Gagal memuat data");
         if (labelTemp != null) labelTemp.setText("--");
+        if (labelVisibility != null) labelVisibility.setText("N/A");
     }
 
     // ── Mapping Icon OWM → Ikonli ──────────────────────────────
     private String getWeatherIcon(String owmIcon) {
         if (owmIcon == null) return "mdi2w-weather-cloudy";
         return switch (owmIcon.substring(0, 2)) {
-            case "01" -> "mdi2w-weather-sunny";           // Clear sky
-            case "02" -> "mdi2w-weather-partly-cloudy";   // Few clouds
-            case "03" -> "mdi2w-weather-cloudy";          // Scattered clouds
-            case "04" -> "mdi2w-weather-cloudy";          // Broken clouds
-            case "09" -> "mdi2w-weather-pouring";         // Shower rain
-            case "10" -> "mdi2w-weather-rainy";           // Rain
-            case "11" -> "mdi2w-weather-lightning";       // Thunderstorm
-            case "13" -> "mdi2w-weather-snowy";           // Snow
-            case "50" -> "mdi2w-weather-fog";             // Mist
+            case "01" -> "mdi2w-weather-sunny";
+            case "02" -> "mdi2w-weather-partly-cloudy";
+            case "03" -> "mdi2w-weather-cloudy";
+            case "04" -> "mdi2w-weather-cloudy";
+            case "09" -> "mdi2w-weather-pouring";
+            case "10" -> "mdi2w-weather-rainy";
+            case "11" -> "mdi2w-weather-lightning";
+            case "13" -> "mdi2w-weather-snowy";
+            case "50" -> "mdi2w-weather-fog";
             default   -> "mdi2w-weather-cloudy";
         };
     }
@@ -180,7 +187,6 @@ public class DashboardController {
         return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 
-    // Getter koordinat (dipakai controller lain)
     public double getCurrentLat() { return currentLat; }
     public double getCurrentLon() { return currentLon; }
 }

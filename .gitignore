@@ -1,0 +1,18 @@
+# ===== KEAMANAN — Jangan commit file rahasia =====
+src/main/resources/config.properties
+
+# ===== Build output =====
+target/
+*.class
+*.jar
+
+# ===== IDE files =====
+.idea/
+*.iml
+.vscode/
+nbproject/private/
+nbproject/project.properties
+
+# ===== OS files =====
+.DS_Store
+Thumbs.db
