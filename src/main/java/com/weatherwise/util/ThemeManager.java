@@ -15,8 +15,8 @@ public class ThemeManager {
 
     public static void setMainWindowController(MainWindowController c) {
         mainController = c;
-        // Re-apply tema saat controller baru terdaftar (pindah halaman)
-        applyChrome(currentTheme);
+        // Defer ke next FX pulse agar semua @FXML field sudah ter-inject
+        Platform.runLater(() -> applyChrome(resolveTheme(currentTheme)));
     }
 
     public static void apply(Theme theme) {
@@ -28,10 +28,15 @@ public class ThemeManager {
         });
     }
 
-    /** Dipanggil dari loadPageWithLoader agar chrome selalu sinkron */
     public static void reapplyChrome() {
         Platform.runLater(() -> applyChrome(resolveTheme(currentTheme)));
     }
+
+    public static Theme getCurrentTheme() {
+        return currentTheme;
+    }
+
+    // ─────────────────────────────────────────────────────────
 
     private static Theme resolveTheme(Theme theme) {
         if (theme != Theme.SYSTEM) return theme;
@@ -65,6 +70,4 @@ public class ThemeManager {
         } catch (Exception ignored) {}
         return false;
     }
-
-    public static Theme getCurrentTheme() { return currentTheme; }
 }

@@ -2,7 +2,7 @@ package com.weatherwise.util;
 
 public class AppState {
 
-    private static AppState instance;
+    private static volatile AppState instance;
 
     private double  lat      = -6.2088;
     private double  lon      = 106.8456;
@@ -12,24 +12,24 @@ public class AppState {
     private AppState() {}
 
     public static AppState getInstance() {
-        if (instance == null) instance = new AppState();
+        if (instance == null) {
+            synchronized (AppState.class) {
+                if (instance == null) instance = new AppState();
+            }
+        }
         return instance;
     }
 
-    public void setLocation(double lat, double lon, String cityName) {
+    public synchronized void setLocation(double lat, double lon, String cityName) {
         this.lat      = lat;
         this.lon      = lon;
         this.cityName = cityName;
         this.changed  = true;
     }
 
-    public double  getLat()      { return lat; }
-    public double  getLon()      { return lon; }
-    public String  getCityName() { return cityName; }
-
-    /** Cek apakah lokasi berubah sejak terakhir kali Dashboard dibuka */
-    public boolean isChanged()   { return changed; }
-
-    /** Dipanggil DashboardController setelah selesai reload */
-    public void clearChanged()   { this.changed = false; }
+    public synchronized double  getLat()      { return lat; }
+    public synchronized double  getLon()      { return lon; }
+    public synchronized String  getCityName() { return cityName; }
+    public synchronized boolean isChanged()   { return changed; }
+    public synchronized void    clearChanged(){ this.changed = false; }
 }

@@ -4,6 +4,7 @@ import com.weatherwise.component.ForecastRowCard;
 import com.weatherwise.component.HumidityBarChart;
 import com.weatherwise.model.ForecastDay;
 import com.weatherwise.service.WeatherService;
+import com.weatherwise.util.ThemeManager;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -16,7 +17,7 @@ import java.util.List;
 
 public class ForecastController {
 
-    @FXML private VBox   forecastContainer;       // fx:id di FXML
+    @FXML private VBox   forecastContainer;
     @FXML private Label  labelCity;
     @FXML private Label  labelStatus;
     @FXML private Button btnCelsius;
@@ -29,6 +30,7 @@ public class ForecastController {
     private double  currentLon  = 106.8456;
     private String  currentCity = "Jakarta, ID";
     private boolean isCelsius   = true;
+    private volatile boolean active = true;
 
     private List<ForecastDay> cachedForecast = null;
 
@@ -37,6 +39,10 @@ public class ForecastController {
         if (labelCity != null) labelCity.setText(currentCity);
         refreshUnitButtons();
         loadForecast(currentLat, currentLon);
+    }
+
+    public void dispose() {
+        active = false;
     }
 
     // ── Load Forecast ─────────────────────────────────────────
@@ -52,18 +58,22 @@ public class ForecastController {
         };
 
         task.setOnSucceeded(e -> {
+            if (!active) return;
             cachedForecast = task.getValue();
             Platform.runLater(() -> renderForecast(cachedForecast));
         });
 
         task.setOnFailed(e -> {
+            if (!active) return;
             String msg = task.getException() != null
                     ? task.getException().getMessage() : "Gagal memuat data";
-            System.err.println("\u274c Gagal load forecast: " + msg);
+            System.err.println("❌ Gagal load forecast: " + msg);
             Platform.runLater(() -> showError(msg));
         });
 
-        Thread t = new Thread(task); t.setDaemon(true); t.start();
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        t.start();
     }
 
     public void setLocation(double lat, double lon, String cityName) {
@@ -74,14 +84,16 @@ public class ForecastController {
         loadForecast(lat, lon);
     }
 
-    // ── Render kartu forecast menggunakan ForecastRowCard ─────
+    // ── Render kartu forecast ─────────────────────────────────
     private void renderForecast(List<ForecastDay> days) {
-        if (forecastContainer == null) return;
+        if (!active || forecastContainer == null) return;
         forecastContainer.getChildren().clear();
         if (labelStatus != null) labelStatus.setVisible(false);
 
+        boolean dark = ThemeManager.getCurrentTheme() == ThemeManager.Theme.DARK;
+
         for (ForecastDay day : days) {
-            // Konversi suhu ke Fahrenheit jika diperlukan
+            ForecastDay toRender = day;
             if (!isCelsius) {
                 ForecastDay converted = new ForecastDay();
                 converted.setDayName(day.getDayName());
@@ -95,25 +107,33 @@ public class ForecastController {
                 converted.setTempLow(celsiusToF(day.getTempLow()));
                 converted.setHumidity(day.getHumidity());
                 converted.setWindSpeed(day.getWindSpeed());
-                forecastContainer.getChildren().add(new ForecastRowCard(converted));
-            } else {
-                forecastContainer.getChildren().add(new ForecastRowCard(day));
+                toRender = converted;
             }
+            forecastContainer.getChildren().add(new ForecastRowCard(toRender));
         }
 
-        // Render humidity chart dari data nyata
+        // Render humidity chart — fix: pastikan width & height valid
         if (humidityChartContainer != null && !days.isEmpty()) {
             humidityChartContainer.getChildren().clear();
+
             double w = humidityChartContainer.getWidth();
             double h = humidityChartContainer.getPrefHeight();
-            if (w <= 0) w = 400;
 
-            HumidityBarChart chart = new HumidityBarChart(w, h);
-            chart.setData(
-                days.stream().map(ForecastDay::getDayName).toArray(String[]::new),
-                days.stream().mapToDouble(ForecastDay::getHumidity).toArray()
-            );
-            humidityChartContainer.getChildren().add(chart);
+            // Fallback jika belum di-layout
+            if (w <= 10) w = humidityChartContainer.getPrefWidth();
+            if (w <= 10) w = 500;
+            if (h <= 10) h = 120; // jangan pakai nilai negatif/nol
+
+            try {
+                HumidityBarChart chart = new HumidityBarChart(w, h);
+                chart.setData(
+                    days.stream().map(ForecastDay::getDayName).toArray(String[]::new),
+                    days.stream().mapToDouble(ForecastDay::getHumidity).toArray()
+                );
+                humidityChartContainer.getChildren().add(chart);
+            } catch (Exception ex) {
+                System.err.println("❌ HumidityBarChart error: " + ex.getMessage());
+            }
         }
     }
 
@@ -147,14 +167,11 @@ public class ForecastController {
         if (btnFahrenheit != null) btnFahrenheit.setStyle(!isCelsius ? active : normal);
     }
 
-    // ── Tombol Open Map ───────────────────────────────────────
+    // ── Open Map ──────────────────────────────────────────────
     @FXML
     private void handleOpenMap() {
-        // Navigasi ke halaman Maps melalui MainWindowController
-        // Cari MainWindowController di scene graph
         if (forecastContainer != null && forecastContainer.getScene() != null) {
             javafx.scene.Node root = forecastContainer.getScene().getRoot();
-            // Trigger via lookup — cari tombol Maps di sidebar
             javafx.scene.Node mapsBtn = root.lookup("#sidebarMaps");
             if (mapsBtn instanceof javafx.scene.control.Button btn) {
                 btn.fire();
@@ -166,14 +183,14 @@ public class ForecastController {
     private void showLoading() {
         if (forecastContainer != null) forecastContainer.getChildren().clear();
         if (labelStatus != null) {
-            labelStatus.setText("\u23f3 Memuat prakiraan cuaca...");
+            labelStatus.setText("⏳ Memuat prakiraan cuaca...");
             labelStatus.setVisible(true);
         }
     }
 
     private void showError(String msg) {
         if (labelStatus != null) {
-            labelStatus.setText("\u274c " + (msg != null ? msg : "Gagal memuat data"));
+            labelStatus.setText("❌ " + (msg != null ? msg : "Gagal memuat data"));
             labelStatus.setVisible(true);
         }
     }
