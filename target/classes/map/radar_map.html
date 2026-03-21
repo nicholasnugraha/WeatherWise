@@ -16,14 +16,12 @@
         #map {
             width: 100%; height: 100%;
             position: absolute; top: 0; left: 0;
+            will-change: transform; /* ✅ BARU: hint GPU compositing layer */
         }
 
-        /* ── OSM dark mode via CSS filter — tidak butuh CDN lain ── */
         .osm-dark {
             filter: invert(100%) hue-rotate(180deg) brightness(0.85) contrast(0.9);
         }
-
-        /* ── Boost visibilitas OWM weather overlay ── */
         .owm-weather-layer {
             filter: saturate(3) brightness(1.1) contrast(1.15);
         }
@@ -134,17 +132,11 @@
         }
     };
 
-    // ════════════════════════════════════════════════════════
-    // API KEY INJECTION
-    // ════════════════════════════════════════════════════════
     function setApiKey(key) {
         OWM_API_KEY = key;
         if (map !== null) _applyWeatherLayer(currentLayer);
     }
 
-    // ════════════════════════════════════════════════════════
-    // INIT MAP
-    // ════════════════════════════════════════════════════════
     function initMap() {
         var mapDiv = document.getElementById("map");
         mapDiv.style.width  = window.innerWidth  + "px";
@@ -156,29 +148,29 @@
         }
 
         map = L.map("map", {
-            center:          [DEFAULT_LAT, DEFAULT_LON],
-            zoom:            8,
-            zoomControl:     false,
-            preferCanvas:    true,
-            dragging:        true,
-            scrollWheelZoom: true,
-            doubleClickZoom: true,
-            touchZoom:       true
+            center:              [DEFAULT_LAT, DEFAULT_LON],
+            zoom:                8,
+            zoomControl:         false,
+            preferCanvas:        true,
+            dragging:            true,
+            scrollWheelZoom:     true,
+            doubleClickZoom:     true,
+            touchZoom:           true,
+            fadeAnimation:       false, /* ✅ BARU: matikan tile fade-in */
+            zoomAnimation:       false, /* ✅ BARU: matikan zoom animation */
+            markerZoomAnimation: false  /* ✅ BARU: matikan marker animation */
         });
 
-        // ── Base tile: OSM + CSS filter dark mode ────────────
-        // Tile dari openstreetmap.org 100% kompatibel dengan
-        // JavaFX WebView — tidak ada issue User-Agent/CDN
         baseTileLayer = L.tileLayer(
             "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
             {
                 maxZoom:           19,
-                keepBuffer:        4,
-                updateWhenIdle:    false,
+                keepBuffer:        2,   /* ✅ UBAH: 4 → 2, kurangi pre-load tile */
+                updateWhenIdle:    true,  /* ✅ UBAH: false → true, fetch setelah drag berhenti */
                 updateWhenZooming: false,
                 subdomains:        ["a","b","c"],
                 attribution:       "\u00a9 OpenStreetMap contributors",
-                className:         "osm-dark"   // ← dark mode via CSS filter
+                className:         "osm-dark"
             }
         );
         baseTileLayer.addTo(map);
@@ -198,9 +190,6 @@
         }, 100);
     }
 
-    // ════════════════════════════════════════════════════════
-    // WEATHER TILE LAYER
-    // ════════════════════════════════════════════════════════
     function _applyWeatherLayer(layerName) {
         if (!map) return;
 
@@ -221,7 +210,7 @@
             {
                 opacity:           cfg.opacity,
                 maxZoom:           18,
-                keepBuffer:        2,
+                keepBuffer:        1,   /* ✅ UBAH: 2 → 1 */
                 updateWhenIdle:    true,
                 updateWhenZooming: false,
                 errorTileUrl:      "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
@@ -233,17 +222,12 @@
         _updateLegend(layerName);
     }
 
-    // ════════════════════════════════════════════════════════
-    // LEGEND
-    // ════════════════════════════════════════════════════════
     function _updateLegend(layerName) {
         var legend = document.getElementById("heatmap-legend");
         if (!legend) return;
         if (!layerName) { legend.style.display = "none"; return; }
-
         var cfg = LAYER_CONFIG[layerName];
         if (!cfg) { legend.style.display = "none"; return; }
-
         document.getElementById("legend-title").textContent    = cfg.title;
         document.getElementById("legend-bar").style.background = cfg.gradientCss;
         document.getElementById("legend-min").textContent      = cfg.legendMin;
@@ -251,9 +235,6 @@
         legend.style.display = "block";
     }
 
-    // ════════════════════════════════════════════════════════
-    // PUBLIC API
-    // ════════════════════════════════════════════════════════
     function setWeatherLayer(layerName) {
         currentLayer = layerName;
         _applyWeatherLayer(layerName);
