@@ -183,7 +183,7 @@
             </Button>
         </HBox>
 
-        <!-- Intensity Legend -->
+<!--         Intensity Legend 
         <HBox alignment="CENTER" pickOnBounds="false"
               style="-fx-background-color: rgba(255,255,255,0.95);
                      -fx-background-radius: 16;
@@ -227,7 +227,7 @@
                     <graphic><FontIcon iconLiteral="mdi2s-share-variant" iconSize="16" iconColor="#475569"/></graphic>
                 </Button>
             </HBox>
-        </HBox>
+        </HBox>-->
     </VBox>
 
 </StackPane>

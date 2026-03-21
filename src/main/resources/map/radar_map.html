@@ -10,7 +10,7 @@
         html, body {
             width: 100%; height: 100%;
             overflow: hidden;
-            background: #0f172a;
+            background: #1a1a2e;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
         #map {
@@ -18,13 +18,22 @@
             position: absolute; top: 0; left: 0;
         }
 
-        /* ── Legend ── */
+        /* ── OSM dark mode via CSS filter — tidak butuh CDN lain ── */
+        .osm-dark {
+            filter: invert(100%) hue-rotate(180deg) brightness(0.85) contrast(0.9);
+        }
+
+        /* ── Boost visibilitas OWM weather overlay ── */
+        .owm-weather-layer {
+            filter: saturate(3) brightness(1.1) contrast(1.15);
+        }
+
         #heatmap-legend {
             position: absolute;
             bottom: 28px; left: 16px;
             z-index: 1000;
-            background: rgba(15,23,42,0.85);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(15,23,42,0.88);
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 10px;
             padding: 10px 14px;
             color: white; font-size: 11px;
@@ -41,16 +50,14 @@
         }
         #heatmap-legend .legend-labels {
             display: flex; justify-content: space-between;
-            opacity: 0.65; font-size: 10px;
+            opacity: 0.70; font-size: 10px;
         }
-
         .leaflet-control-attribution { font-size: 9px; opacity: 0.45; }
         .leaflet-popup-content-wrapper {
             background: #1e293b; color: white;
             border-radius: 12px; border: 1px solid #334155;
         }
         .leaflet-popup-tip { background: #1e293b; }
-
         .current-location-marker {
             background: #2b8cee;
             border: 3px solid white;
@@ -81,30 +88,21 @@
 <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
 
 <script>
-    // ════════════════════════════════════════════════════════
-    // STATE
-    // ════════════════════════════════════════════════════════
     var map           = null;
     var OWM_API_KEY   = "";
-    var MT_API_KEY    = "";
     var currentMarker = null;
     var baseTileLayer = null;
-    var weatherLayer  = null;       // OWM weather tile layer aktif
+    var weatherLayer  = null;
     var currentLayer  = "precipitation";
 
     var DEFAULT_LAT  = -6.2088;
     var DEFAULT_LON  = 106.8456;
     var DEFAULT_CITY = "Jakarta, ID";
 
-    // ── Konfigurasi per layer ────────────────────────────────
-    // owmName   : nama layer di OWM tile API
-    // opacity   : transparansi overlay (0.0 – 1.0)
-    // legend    : info untuk legend bar di overlay UI
-    // ────────────────────────────────────────────────────────
     var LAYER_CONFIG = {
         precipitation: {
             owmName:     "precipitation_new",
-            opacity:     0.75,
+            opacity:     0.95,
             title:       "🌧 Precipitation",
             gradientCss: "linear-gradient(to right,#93c5fd,#4ade80,#facc15,#f97316,#ef4444)",
             legendMin:   "Rendah",
@@ -112,7 +110,7 @@
         },
         clouds: {
             owmName:     "clouds_new",
-            opacity:     0.65,
+            opacity:     0.85,
             title:       "☁️ Cloud Cover",
             gradientCss: "linear-gradient(to right,#f0f9ff,#93c5fd,#60a5fa,#1d4ed8)",
             legendMin:   "Cerah (0%)",
@@ -120,7 +118,7 @@
         },
         wind: {
             owmName:     "wind_new",
-            opacity:     0.70,
+            opacity:     0.95,
             title:       "💨 Wind Speed",
             gradientCss: "linear-gradient(to right,#d1fae5,#6ee7b7,#facc15,#f97316,#dc2626)",
             legendMin:   "Tenang",
@@ -128,7 +126,7 @@
         },
         temp: {
             owmName:     "temp_new",
-            opacity:     0.70,
+            opacity:     0.85,
             title:       "🌡 Temperature",
             gradientCss: "linear-gradient(to right,#7dd3fc,#4ade80,#facc15,#f97316,#ef4444)",
             legendMin:   "Dingin",
@@ -137,17 +135,11 @@
     };
 
     // ════════════════════════════════════════════════════════
-    // API KEY INJECTION — dipanggil RadarMapController.java
+    // API KEY INJECTION
     // ════════════════════════════════════════════════════════
     function setApiKey(key) {
         OWM_API_KEY = key;
-        // Rebuild weather tile layer dengan key yang baru
         if (map !== null) _applyWeatherLayer(currentLayer);
-    }
-
-    function setMaptilerApiKey(key) {
-        MT_API_KEY = key;
-        if (map !== null) _rebuildBaseTile();
     }
 
     // ════════════════════════════════════════════════════════
@@ -174,7 +166,22 @@
             touchZoom:       true
         });
 
-        _rebuildBaseTile();
+        // ── Base tile: OSM + CSS filter dark mode ────────────
+        // Tile dari openstreetmap.org 100% kompatibel dengan
+        // JavaFX WebView — tidak ada issue User-Agent/CDN
+        baseTileLayer = L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom:           19,
+                keepBuffer:        4,
+                updateWhenIdle:    false,
+                updateWhenZooming: false,
+                subdomains:        ["a","b","c"],
+                attribution:       "\u00a9 OpenStreetMap contributors",
+                className:         "osm-dark"   // ← dark mode via CSS filter
+            }
+        );
+        baseTileLayer.addTo(map);
 
         var currentIcon = L.divIcon({
             className: "current-location-marker",
@@ -192,47 +199,11 @@
     }
 
     // ════════════════════════════════════════════════════════
-    // BASE TILE — MapTiler jika key ada, fallback OSM
-    // ════════════════════════════════════════════════════════
-    function _rebuildBaseTile() {
-    if (!map) return;
-    if (baseTileLayer) { map.removeLayer(baseTileLayer); baseTileLayer = null; }
-
-    if (MT_API_KEY) {
-        baseTileLayer = L.tileLayer(
-            "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=" + MT_API_KEY,
-            {
-                maxZoom: 18, keepBuffer: 4,
-                updateWhenIdle: false, updateWhenZooming: false,
-                attribution: "\u00a9 <a href='https://www.maptiler.com/'>MapTiler</a> \u00a9 OSM"
-            }
-        );
-    } else {
-        baseTileLayer = L.tileLayer(
-            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            {
-                maxZoom: 18, subdomains: ["a","b","c"],
-                attribution: "\u00a9 OpenStreetMap contributors"
-            }
-        );
-    }
-    baseTileLayer.addTo(map);
-
-    // ✅ FIX: re-apply weather layer SETELAH base tile ditambahkan
-    // supaya weather layer selalu berada di atas
-    if (OWM_API_KEY && OWM_API_KEY.length >= 10) {
-        _applyWeatherLayer(currentLayer);
-    }
-}
-
-
-    // ════════════════════════════════════════════════════════
-    // WEATHER TILE LAYER — OWM tile overlay per layer
+    // WEATHER TILE LAYER
     // ════════════════════════════════════════════════════════
     function _applyWeatherLayer(layerName) {
         if (!map) return;
 
-        // Hapus layer lama
         if (weatherLayer && map.hasLayer(weatherLayer)) {
             map.removeLayer(weatherLayer);
             weatherLayer = null;
@@ -244,17 +215,17 @@
             return;
         }
 
-        // OWM weather tile: https://tile.openweathermap.org/map/{layer}/{z}/{x}/{y}.png?appid={key}
         weatherLayer = L.tileLayer(
-            "https://tile.openweathermap.org/map/" + cfg.owmName + "/{z}/{x}/{y}.png?appid=" + OWM_API_KEY,
+            "https://tile.openweathermap.org/map/" + cfg.owmName
+            + "/{z}/{x}/{y}.png?appid=" + OWM_API_KEY,
             {
                 opacity:           cfg.opacity,
                 maxZoom:           18,
                 keepBuffer:        2,
                 updateWhenIdle:    true,
                 updateWhenZooming: false,
-                // Error tile (area tanpa data) tidak ditampilkan
-                errorTileUrl:      "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                errorTileUrl:      "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+                className:         "owm-weather-layer"
             }
         );
 
@@ -268,11 +239,7 @@
     function _updateLegend(layerName) {
         var legend = document.getElementById("heatmap-legend");
         if (!legend) return;
-
-        if (!layerName) {
-            legend.style.display = "none";
-            return;
-        }
+        if (!layerName) { legend.style.display = "none"; return; }
 
         var cfg = LAYER_CONFIG[layerName];
         if (!cfg) { legend.style.display = "none"; return; }
@@ -285,10 +252,8 @@
     }
 
     // ════════════════════════════════════════════════════════
-    // PUBLIC API — dipanggil RadarMapController.java
-    // Semua signature TIDAK BERUBAH
+    // PUBLIC API
     // ════════════════════════════════════════════════════════
-
     function setWeatherLayer(layerName) {
         currentLayer = layerName;
         _applyWeatherLayer(layerName);
@@ -308,9 +273,7 @@
         DEFAULT_LAT  = lat;
         DEFAULT_LON  = lng;
         DEFAULT_CITY = name;
-
         map.flyTo([lat, lng], 10, { animate: true, duration: 1.2 });
-
         if (currentMarker) {
             currentMarker.setLatLng([lat, lng]);
             currentMarker.setPopupContent("<b>" + name + "</b><br>" + desc);
