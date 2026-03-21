@@ -5,6 +5,9 @@ import com.weatherwise.component.HumidityBarChart;
 import com.weatherwise.model.ForecastDay;
 import com.weatherwise.service.WeatherService;
 import com.weatherwise.util.ThemeManager;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -17,32 +20,66 @@ import java.util.List;
 
 public class ForecastController {
 
-    @FXML private VBox   forecastContainer;
-    @FXML private Label  labelCity;
-    @FXML private Label  labelStatus;
-    @FXML private Button btnCelsius;
-    @FXML private Button btnFahrenheit;
-    @FXML private Pane   humidityChartContainer;
+    @FXML
+    private VBox forecastContainer;
+    @FXML
+    private Label labelCity;
+    @FXML
+    private Label labelStatus;
+    @FXML
+    private Button btnCelsius;
+    @FXML
+    private Button btnFahrenheit;
+    @FXML
+    private Pane humidityChartContainer;
 
     private final WeatherService weatherService = new WeatherService();
+    private ScheduledExecutorService refreshScheduler;
+    private static final int REFRESH_INTERVAL_MINUTES = 5;
 
-    private double  currentLat  = -6.2088;
-    private double  currentLon  = 106.8456;
-    private String  currentCity = "Jakarta, ID";
-    private boolean isCelsius   = true;
+    private double currentLat = -6.2088;
+    private double currentLon = 106.8456;
+    private String currentCity = "Jakarta, ID";
+    private boolean isCelsius = true;
     private volatile boolean active = true;
 
     private List<ForecastDay> cachedForecast = null;
 
     @FXML
     public void initialize() {
-        if (labelCity != null) labelCity.setText(currentCity);
+        if (labelCity != null) {
+            labelCity.setText(currentCity);
+        }
         refreshUnitButtons();
         loadForecast(currentLat, currentLon);
+        startAutoRefresh();
+    }
+    
+    private void startAutoRefresh() {
+        refreshScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "ForecastAutoRefresh");
+            t.setDaemon(true);
+            return t;
+        });
+
+        refreshScheduler.scheduleAtFixedRate(() -> {
+            if (!active) {
+                return;
+            }
+            System.out.println("🔄 Auto-refresh forecast...");
+            Platform.runLater(() -> {
+                if (active) {
+                    loadForecast(currentLat, currentLon);
+                }
+            });
+        }, REFRESH_INTERVAL_MINUTES, REFRESH_INTERVAL_MINUTES, TimeUnit.MINUTES);
     }
 
     public void dispose() {
         active = false;
+        if (refreshScheduler != null && !refreshScheduler.isShutdown()) {
+            refreshScheduler.shutdownNow();
+        }
     }
 
     // ── Load Forecast ─────────────────────────────────────────
@@ -52,19 +89,24 @@ public class ForecastController {
         showLoading();
 
         Task<List<ForecastDay>> task = new Task<>() {
-            @Override protected List<ForecastDay> call() throws Exception {
+            @Override
+            protected List<ForecastDay> call() throws Exception {
                 return weatherService.getForecast(lat, lon);
             }
         };
 
         task.setOnSucceeded(e -> {
-            if (!active) return;
+            if (!active) {
+                return;
+            }
             cachedForecast = task.getValue();
             Platform.runLater(() -> renderForecast(cachedForecast));
         });
 
         task.setOnFailed(e -> {
-            if (!active) return;
+            if (!active) {
+                return;
+            }
             String msg = task.getException() != null
                     ? task.getException().getMessage() : "Gagal memuat data";
             System.err.println("❌ Gagal load forecast: " + msg);
@@ -77,18 +119,24 @@ public class ForecastController {
     }
 
     public void setLocation(double lat, double lon, String cityName) {
-        this.currentLat  = lat;
-        this.currentLon  = lon;
+        this.currentLat = lat;
+        this.currentLon = lon;
         this.currentCity = cityName;
-        if (labelCity != null) labelCity.setText(cityName);
+        if (labelCity != null) {
+            labelCity.setText(cityName);
+        }
         loadForecast(lat, lon);
     }
 
     // ── Render kartu forecast ─────────────────────────────────
     private void renderForecast(List<ForecastDay> days) {
-        if (!active || forecastContainer == null) return;
+        if (!active || forecastContainer == null) {
+            return;
+        }
         forecastContainer.getChildren().clear();
-        if (labelStatus != null) labelStatus.setVisible(false);
+        if (labelStatus != null) {
+            labelStatus.setVisible(false);
+        }
 
         boolean dark = ThemeManager.getCurrentTheme() == ThemeManager.Theme.DARK;
 
@@ -120,15 +168,20 @@ public class ForecastController {
             double h = humidityChartContainer.getPrefHeight();
 
             // Fallback jika belum di-layout
-            if (w <= 10) w = humidityChartContainer.getPrefWidth();
-            if (w <= 10) w = 500;
-            if (h <= 10) h = 120; // jangan pakai nilai negatif/nol
-
+            if (w <= 10) {
+                w = humidityChartContainer.getPrefWidth();
+            }
+            if (w <= 10) {
+                w = 500;
+            }
+            if (h <= 10) {
+                h = 120; // jangan pakai nilai negatif/nol
+            }
             try {
                 HumidityBarChart chart = new HumidityBarChart(w, h);
                 chart.setData(
-                    days.stream().map(ForecastDay::getDayName).toArray(String[]::new),
-                    days.stream().mapToDouble(ForecastDay::getHumidity).toArray()
+                        days.stream().map(ForecastDay::getDayName).toArray(String[]::new),
+                        days.stream().mapToDouble(ForecastDay::getHumidity).toArray()
                 );
                 humidityChartContainer.getChildren().add(chart);
             } catch (Exception ex) {
@@ -138,33 +191,43 @@ public class ForecastController {
     }
 
     // ── Unit Toggle ───────────────────────────────────────────
-    @FXML private void handleCelsius() {
+    @FXML
+    private void handleCelsius() {
         if (!isCelsius) {
             isCelsius = true;
             refreshUnitButtons();
-            if (cachedForecast != null) renderForecast(cachedForecast);
+            if (cachedForecast != null) {
+                renderForecast(cachedForecast);
+            }
         }
     }
 
-    @FXML private void handleFahrenheit() {
+    @FXML
+    private void handleFahrenheit() {
         if (isCelsius) {
             isCelsius = false;
             refreshUnitButtons();
-            if (cachedForecast != null) renderForecast(cachedForecast);
+            if (cachedForecast != null) {
+                renderForecast(cachedForecast);
+            }
         }
     }
 
     private void refreshUnitButtons() {
         String active = "-fx-background-color: #2b8cee; -fx-text-fill: white;"
-                      + "-fx-font-weight: bold; -fx-font-size: 13px;"
-                      + "-fx-background-radius: 7; -fx-cursor: hand;"
-                      + "-fx-pref-width: 48; -fx-pref-height: 32;";
+                + "-fx-font-weight: bold; -fx-font-size: 13px;"
+                + "-fx-background-radius: 7; -fx-cursor: hand;"
+                + "-fx-pref-width: 48; -fx-pref-height: 32;";
         String normal = "-fx-background-color: transparent; -fx-text-fill: #64748b;"
-                      + "-fx-font-weight: bold; -fx-font-size: 13px;"
-                      + "-fx-background-radius: 7; -fx-cursor: hand;"
-                      + "-fx-pref-width: 48; -fx-pref-height: 32;";
-        if (btnCelsius    != null) btnCelsius.setStyle(isCelsius  ? active : normal);
-        if (btnFahrenheit != null) btnFahrenheit.setStyle(!isCelsius ? active : normal);
+                + "-fx-font-weight: bold; -fx-font-size: 13px;"
+                + "-fx-background-radius: 7; -fx-cursor: hand;"
+                + "-fx-pref-width: 48; -fx-pref-height: 32;";
+        if (btnCelsius != null) {
+            btnCelsius.setStyle(isCelsius ? active : normal);
+        }
+        if (btnFahrenheit != null) {
+            btnFahrenheit.setStyle(!isCelsius ? active : normal);
+        }
     }
 
     // ── Open Map ──────────────────────────────────────────────
@@ -181,7 +244,9 @@ public class ForecastController {
 
     // ── State Helpers ─────────────────────────────────────────
     private void showLoading() {
-        if (forecastContainer != null) forecastContainer.getChildren().clear();
+        if (forecastContainer != null) {
+            forecastContainer.getChildren().clear();
+        }
         if (labelStatus != null) {
             labelStatus.setText("⏳ Memuat prakiraan cuaca...");
             labelStatus.setVisible(true);
@@ -195,5 +260,7 @@ public class ForecastController {
         }
     }
 
-    private double celsiusToF(double c) { return c * 9.0 / 5.0 + 32; }
+    private double celsiusToF(double c) {
+        return c * 9.0 / 5.0 + 32;
+    }
 }

@@ -173,11 +173,14 @@ public class MainWindowController {
 
     private FXMLLoader loadPageWithLoader(String pageName) {
         try {
-            // Dispose controller aktif sebelumnya untuk cegah task zombie
+            // Dispose controller sebelumnya — cegah scheduler zombie
             if (!contentArea.getChildren().isEmpty()) {
                 Node old = contentArea.getChildren().get(0);
-                if (old.getUserData() instanceof DashboardController dc) {
+                Object userData = old.getUserData();
+                if (userData instanceof DashboardController dc) {
                     dc.dispose();
+                } else if (userData instanceof ForecastController fc) {
+                    fc.dispose();
                 }
             }
 
@@ -185,9 +188,10 @@ public class MainWindowController {
                     App.class.getResource("/fxml/" + pageName + ".fxml"));
             Node page = loader.load();
 
-            // Simpan controller di userData node agar bisa dispose nanti
-            if (loader.getController() instanceof DashboardController dc) {
-                page.setUserData(dc);
+            // Simpan controller agar bisa dispose nanti
+            Object ctrl = loader.getController();
+            if (ctrl instanceof DashboardController || ctrl instanceof ForecastController) {
+                page.setUserData(ctrl);
             }
 
             if (page instanceof Region region) {
@@ -204,6 +208,7 @@ public class MainWindowController {
             return null;
         }
     }
+
 
     // ── Apply Dark/Light ke Chrome (navbar & sidebar) ─────────
     public void applyThemeToChrome(ThemeManager.Theme theme) {

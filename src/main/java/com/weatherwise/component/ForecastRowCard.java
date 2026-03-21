@@ -21,7 +21,7 @@ public class ForecastRowCard extends HBox {
                 -fx-cursor: hand;
                 """);
 
-        // ── Kolom 1: Nama Hari & Tanggal (lebar tetap) ──────────
+        // ── Kolom 1: Nama Hari & Tanggal (tidak berubah) ────────
         VBox dayBox = new VBox(4);
         dayBox.setPrefWidth(130);
         dayBox.setMinWidth(130);
@@ -43,12 +43,11 @@ public class ForecastRowCard extends HBox {
 
         dayBox.getChildren().addAll(dayLabel, dateLabel);
 
-        // ── Kolom 2: Icon + Kondisi ──────────────────────────────
+        // ── Kolom 2: Icon + Kondisi (tidak berubah) ──────────────
         HBox conditionBox = new HBox(16);
         conditionBox.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(conditionBox, Priority.ALWAYS);
 
-        // Icon cuaca dengan background
         VBox iconBox = new VBox();
         iconBox.setAlignment(Pos.CENTER);
         iconBox.setPadding(new Insets(10));
@@ -64,7 +63,6 @@ public class ForecastRowCard extends HBox {
         icon.setIconColor(Color.web(day.getIconColor()));
         iconBox.getChildren().add(icon);
 
-        // Teks kondisi & deskripsi
         VBox textBox = new VBox(4);
         textBox.setAlignment(Pos.CENTER_LEFT);
 
@@ -84,7 +82,35 @@ public class ForecastRowCard extends HBox {
         textBox.getChildren().addAll(condLabel, descLabel);
         conditionBox.getChildren().addAll(iconBox, textBox);
 
-        // ── Kolom 3: Suhu High & Low ─────────────────────────────
+        // ── Kolom 3: Badge probabilitas hujan ✅ BARU ─────────────
+        VBox popBox = new VBox(4);
+        popBox.setAlignment(Pos.CENTER);
+        popBox.setPrefWidth(70);
+        popBox.setMinWidth(70);
+
+        FontIcon rainIcon = new FontIcon("mdi2w-water");
+        rainIcon.setIconSize(16);
+        // Warna badge: biru jika >40%, abu jika rendah
+        String popColor = day.getPop() >= 0.4 ? "#2b8cee" : "#94a3b8";
+        rainIcon.setIconColor(Color.web(popColor));
+
+        Label popLabel = new Label(day.getPopDisplay());
+        popLabel.setStyle(String.format("""
+                -fx-font-size: 14px;
+                -fx-font-weight: 700;
+                -fx-text-fill: %s;
+                """, popColor));
+
+        Label popSubLabel = new Label("Rain");
+        popSubLabel.setStyle("""
+                -fx-font-size: 9px;
+                -fx-font-weight: bold;
+                -fx-text-fill: #94a3b8;
+                """);
+
+        popBox.getChildren().addAll(rainIcon, popLabel, popSubLabel);
+
+        // ── Kolom 4: Suhu High & Low (tidak berubah) ─────────────
         HBox tempBox = new HBox(20);
         tempBox.setAlignment(Pos.CENTER_RIGHT);
         tempBox.setPrefWidth(130);
@@ -123,7 +149,7 @@ public class ForecastRowCard extends HBox {
         lowBox.getChildren().addAll(lowTemp, lowLbl);
         tempBox.getChildren().addAll(highBox, lowBox);
 
-        // ── Hover Effect ─────────────────────────────────────────
+        // ── Hover Effect (tidak berubah) ─────────────────────────
         setOnMouseEntered(e -> setStyle("""
                 -fx-background-color: white;
                 -fx-background-radius: 14;
@@ -140,6 +166,7 @@ public class ForecastRowCard extends HBox {
                 -fx-cursor: hand;
                 """));
 
-        getChildren().addAll(dayBox, conditionBox, tempBox);
+        // ── Susun semua kolom ─────────────────────────────────────
+        getChildren().addAll(dayBox, conditionBox, popBox, tempBox);
     }
 }

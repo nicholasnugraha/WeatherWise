@@ -1,280 +1,526 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8"/>
-        <title>WeatherWise Radar</title>
-        <link rel="stylesheet"
-              href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
-        <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body {
-                width: 100%; height: 100%;
-                overflow: hidden;
-                background: #aad3df;
-            }
-            #map {
-                width: 100%; height: 100%;
-                background: #aad3df;
-                position: absolute;
-                top: 0; left: 0;
-            }
-            .leaflet-control-attribution { font-size: 9px; opacity: 0.5; }
-            .leaflet-popup-content-wrapper {
-                background: #1e293b; color: white;
-                border-radius: 12px; border: 1px solid #334155;
-            }
-            .leaflet-popup-tip { background: #1e293b; }
-            .current-location-marker {
-                background: #2b8cee;
-                border: 3px solid white;
-                border-radius: 50%;
-                box-shadow: 0 0 0 4px rgba(43,140,238,0.35);
-                animation: pulse 2s infinite;
-            }
-            @keyframes pulse {
-                0%   { box-shadow: 0 0 0 0   rgba(43,140,238,0.5); }
-                70%  { box-shadow: 0 0 0 14px rgba(43,140,238,0); }
-                100% { box-shadow: 0 0 0 0   rgba(43,140,238,0); }
-            }
-        </style>
-    </head>
-    <body>
-        <div id="map"></div>
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script>
-            var map           = null;
-            var API_KEY       = "";
-            var weatherLayers = {};
-            var simulationLayers = [];
-            var currentMarker = null;
-            var currentLayer  = 'precipitation';
+<head>
+    <meta charset="UTF-8"/>
+    <title>WeatherWise Radar</title>
 
-            var DEFAULT_LAT  = -6.2088;
-            var DEFAULT_LON  = 106.8456;
-            var DEFAULT_CITY = "Jakarta, ID";
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css"/>
 
-            // ── Palette warna per layer ──────────────────────
-            var layerColors = {
-                precipitation: [
-                    { threshold: 0.0, color: '#93c5fd' },
-                    { threshold: 0.3, color: '#4ade80' },
-                    { threshold: 0.5, color: '#facc15' },
-                    { threshold: 0.7, color: '#f97316' },
-                    { threshold: 0.9, color: '#ef4444' }
-                ],
-                clouds: [
-                    { threshold: 0.0, color: '#e0f2fe' },
-                    { threshold: 0.4, color: '#93c5fd' },
-                    { threshold: 0.7, color: '#60a5fa' },
-                    { threshold: 0.9, color: '#3b82f6' }
-                ],
-                wind: [
-                    { threshold: 0.0, color: '#d1fae5' },
-                    { threshold: 0.3, color: '#6ee7b7' },
-                    { threshold: 0.6, color: '#facc15' },
-                    { threshold: 0.85, color: '#f97316' }
-                ],
-                temp: [
-                    { threshold: 0.0, color: '#93c5fd' },
-                    { threshold: 0.25, color: '#6ee7b7' },
-                    { threshold: 0.5, color: '#facc15' },
-                    { threshold: 0.75, color: '#f97316' },
-                    { threshold: 0.9, color: '#ef4444' }
-                ]
-            };
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-            // ── Pseudo-noise deterministik ────────────────────
-            function pseudoNoise(x, y, seed) {
-                var n = Math.sin(x * 127.1 + y * 311.7 + seed * 74.3) * 43758.5453;
-                return n - Math.floor(n);
-            }
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
 
-            function getColor(value, palette) {
-                var color = palette[0].color;
-                for (var i = 0; i < palette.length; i++) {
-                    if (value >= palette[i].threshold) color = palette[i].color;
-                }
-                return color;
-            }
+        #map {
+            width: 100%; height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+        }
 
-            // ── Render heatmap tile grid ──────────────────────
-            function showSimulatedRadar(layerType) {
-                simulationLayers.forEach(function(l) {
-                    if (map && map.hasLayer(l)) map.removeLayer(l);
-                });
-                simulationLayers = [];
-                if (!map) return;
+        /* ── Heatmap Legend ── */
+        #heatmap-legend {
+            position: absolute;
+            bottom: 28px;
+            left: 16px;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.82);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: white;
+            font-size: 11px;
+            min-width: 200px;
+            backdrop-filter: blur(6px);
+            display: none;          /* ditampilkan setelah data dimuat */
+            transition: opacity 0.3s;
+        }
 
-                var palette  = layerColors[layerType] || layerColors.precipitation;
-                var seed     = { precipitation:1, clouds:2, wind:3, temp:4 }[layerType] || 1;
-                var tileSize = 0.045;
-                var gridN    = 20;
-                var startLat = DEFAULT_LAT - (gridN / 2) * tileSize;
-                var startLng = DEFAULT_LON - (gridN / 2) * tileSize;
+        #heatmap-legend .legend-title {
+            font-weight: 700;
+            font-size: 12px;
+            margin-bottom: 7px;
+            opacity: 0.9;
+        }
 
-                for (var row = 0; row < gridN; row++) {
-                    for (var col = 0; col < gridN; col++) {
-                        var tileLat = startLat + row * tileSize;
-                        var tileLng = startLng + col * tileSize;
+        #heatmap-legend .legend-bar {
+            height: 10px;
+            width: 100%;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
 
-                        var raw     = pseudoNoise(tileLat, tileLng, seed);
-                        var distLat = (row - gridN / 2) / gridN;
-                        var distLng = (col - gridN / 2) / gridN;
-                        var dist    = Math.sqrt(distLat * distLat + distLng * distLng);
-                        var value   = raw * 0.5 + (1 - dist * 1.8) * 0.5;
-                        value = Math.max(0, Math.min(1, value));
+        #heatmap-legend .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            opacity: 0.65;
+            font-size: 10px;
+        }
 
-                        if (value < 0.18) continue;
+        /* ── Loading indicator ── */
+        #heatmap-loading {
+            position: absolute;
+            bottom: 28px;
+            left: 16px;
+            z-index: 1000;
+            background: rgba(15, 23, 42, 0.82);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: rgba(255,255,255,0.7);
+            font-size: 11px;
+            backdrop-filter: blur(6px);
+            display: none;
+        }
 
-                        var color   = getColor(value, palette);
-                        var opacity = 0.18 + value * 0.38;
+        .leaflet-control-attribution {
+            font-size: 9px;
+            opacity: 0.5;
+        }
 
-                        var rect = L.rectangle(
-                            [[tileLat, tileLng],
-                             [tileLat + tileSize, tileLng + tileSize]],
-                            {
-                                color:       'transparent',
-                                fillColor:   color,
-                                fillOpacity: opacity,
-                                weight:      0,
-                                interactive: false,
-                                smoothFactor: 0
-                            }
-                        );
-                        rect.addTo(map);
-                        simulationLayers.push(rect);
-                    }
-                }
-            }
+        .leaflet-popup-content-wrapper {
+            background: #1e293b;
+            color: white;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
 
-            // ── Ukuran map ────────────────────────────────────
-            function setMapSize() {
-                var mapDiv = document.getElementById('map');
-                mapDiv.style.width  = window.innerWidth  + 'px';
-                mapDiv.style.height = window.innerHeight + 'px';
-            }
+        .leaflet-popup-tip { background: #1e293b; }
 
-            // ── Inject API key dari Java ──────────────────────
-            function setApiKey(key) {
-                API_KEY = key;
-                if (map !== null) {
-                    ['precipitation_new','clouds_new','wind_new','temp_new'].forEach(function(name) {
-                        var shortName = name.replace('_new', '');
-                        if (weatherLayers[shortName] && map.hasLayer(weatherLayers[shortName])) {
-                            map.removeLayer(weatherLayers[shortName]);
-                        }
-                        weatherLayers[shortName] = L.tileLayer(
-                            'https://tile.openweathermap.org/map/' + name + '/{z}/{x}/{y}.png?appid=' + API_KEY,
-                            { opacity: 0.7, maxZoom: 18 }
-                        );
-                    });
-                }
-            }
+        .current-location-marker {
+            background: #2b8cee;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 4px rgba(43,140,238,0.35);
+            animation: pulse 2s infinite;
+        }
 
-            // ── Init peta ─────────────────────────────────────
-            function initMap() {
-                setMapSize();
+        @keyframes pulse {
+            0%   { box-shadow: 0 0 0 0   rgba(43,140,238,0.5); }
+            70%  { box-shadow: 0 0 0 14px rgba(43,140,238,0); }
+            100% { box-shadow: 0 0 0 0   rgba(43,140,238,0); }
+        }
+    </style>
+</head>
+<body>
 
-                if (map !== null) {
-                    map.invalidateSize({ animate: false });
-                    return;
-                }
+<div id="map"></div>
 
-                map = L.map('map', {
-                    center: [DEFAULT_LAT, DEFAULT_LON],
-                    zoom: 10,
-                    zoomControl: false,
-                    preferCanvas: true,
-                    dragging: true,
-                    touchZoom: true,
-                    scrollWheelZoom: true,
-                    doubleClickZoom: true
-                });
+<!-- Heatmap legend overlay -->
+<div id="heatmap-legend">
+    <div class="legend-title" id="legend-title">Precipitation</div>
+    <div class="legend-bar"   id="legend-bar"></div>
+    <div class="legend-labels" id="legend-labels">
+        <span id="legend-min">Low</span>
+        <span id="legend-max">High</span>
+    </div>
+</div>
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 18,
-                    keepBuffer: 4,
-                    updateWhenIdle: false,
+<!-- Loading indicator -->
+<div id="heatmap-loading">⏳ Memuat data heatmap...</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
+
+<!-- leaflet-heat — heatmap plugin untuk Leaflet -->
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+<script>
+    // ════════════════════════════════════════════════════════
+    // STATE
+    // ════════════════════════════════════════════════════════
+    var map             = null;
+    var OWM_API_KEY     = "";
+    var MT_API_KEY      = "";
+    var currentMarker   = null;
+    var baseTileLayer   = null;
+    var heatLayer       = null;         // leaflet-heat layer aktif
+    var currentLayer    = "precipitation";
+
+    var DEFAULT_LAT  = -6.2088;
+    var DEFAULT_LON  = 106.8456;
+    var DEFAULT_CITY = "Jakarta, ID";
+
+    // ── Config heatmap per layer ─────────────────────────────
+    //   gradient  : warna heatmap (0→1) untuk leaflet-heat
+    //   legend    : label min/max di legend overlay
+    //   gradient-css : string gradient untuk legend bar
+    // ────────────────────────────────────────────────────────
+    var LAYER_CONFIG = {
+        precipitation: {
+            owmParam:    "rain",        // field dari OWM /box/city
+            altParam:    "humidity",    // fallback jika rain = 0
+            maxVal:      50,            // mm → nilai 1.0
+            gradient:    { 0.0: "#93c5fd", 0.3: "#4ade80",
+                           0.6: "#facc15", 0.8: "#f97316", 1.0: "#ef4444" },
+            gradientCss: "linear-gradient(to right, #93c5fd, #4ade80, #facc15, #f97316, #ef4444)",
+            legendMin:   "Rendah / Cerah",
+            legendMax:   "Hujan Lebat",
+            title:       "🌧 Precipitation Heatmap",
+            radius:      30,
+            blur:        22,
+            minOpacity:  0.35
+        },
+        clouds: {
+            owmParam:    "clouds",
+            altParam:    null,
+            maxVal:      100,           // %
+            gradient:    { 0.0: "#f0f9ff", 0.35: "#93c5fd",
+                           0.65: "#60a5fa", 1.0: "#1d4ed8" },
+            gradientCss: "linear-gradient(to right, #f0f9ff, #93c5fd, #60a5fa, #1d4ed8)",
+            legendMin:   "Cerah (0%)",
+            legendMax:   "Mendung (100%)",
+            title:       "☁️ Cloud Cover Heatmap",
+            radius:      35,
+            blur:        28,
+            minOpacity:  0.30
+        },
+        wind: {
+            owmParam:    "speed",       // field di OWM wind object
+            altParam:    null,
+            maxVal:      25,            // m/s → Beaufort 10
+            gradient:    { 0.0: "#d1fae5", 0.3: "#6ee7b7",
+                           0.6: "#facc15", 0.85: "#f97316", 1.0: "#dc2626" },
+            gradientCss: "linear-gradient(to right, #d1fae5, #6ee7b7, #facc15, #f97316, #dc2626)",
+            legendMin:   "Tenang (0 m/s)",
+            legendMax:   "Badai (25+ m/s)",
+            title:       "💨 Wind Speed Heatmap",
+            radius:      28,
+            blur:        20,
+            minOpacity:  0.30
+        },
+        temp: {
+            owmParam:    "temp",
+            altParam:    null,
+            maxVal:      45,            // °C atas
+            minVal:      -10,           // °C bawah
+            gradient:    { 0.0: "#7dd3fc", 0.25: "#4ade80",
+                           0.5: "#facc15", 0.75: "#f97316", 1.0: "#ef4444" },
+            gradientCss: "linear-gradient(to right, #7dd3fc, #4ade80, #facc15, #f97316, #ef4444)",
+            legendMin:   "-10°C (Dingin)",
+            legendMax:   "45°C (Sangat Panas)",
+            title:       "🌡 Temperature Heatmap",
+            radius:      32,
+            blur:        25,
+            minOpacity:  0.30
+        }
+    };
+
+    // ════════════════════════════════════════════════════════
+    // API KEY INJECTION (dipanggil dari RadarMapController.java)
+    // ════════════════════════════════════════════════════════
+    function setApiKey(key) {
+        OWM_API_KEY = key;
+        // Jika map sudah init, langsung reload heatmap
+        if (map !== null) _loadHeatmap(currentLayer);
+    }
+
+    function setMaptilerApiKey(key) {
+        MT_API_KEY = key;
+        if (map !== null) _rebuildBaseTile();
+    }
+
+    // ════════════════════════════════════════════════════════
+    // INIT MAP
+    // ════════════════════════════════════════════════════════
+    function initMap() {
+        var mapDiv = document.getElementById("map");
+        mapDiv.style.width  = window.innerWidth  + "px";
+        mapDiv.style.height = window.innerHeight + "px";
+
+        if (map !== null) {
+            map.invalidateSize({ animate: false });
+            return;
+        }
+
+        map = L.map("map", {
+            center:          [DEFAULT_LAT, DEFAULT_LON],
+            zoom:            8,
+            zoomControl:     false,
+            preferCanvas:    true,
+            dragging:        true,
+            scrollWheelZoom: true,
+            doubleClickZoom: true,
+            touchZoom:       true
+        });
+
+        _rebuildBaseTile();
+
+        // Marker lokasi aktif (animasi pulse)
+        var currentIcon = L.divIcon({
+            className: "current-location-marker",
+            iconSize:  [16, 16],
+            iconAnchor:[8, 8]
+        });
+        currentMarker = L.marker([DEFAULT_LAT, DEFAULT_LON], { icon: currentIcon })
+            .bindPopup("<b>" + DEFAULT_CITY + "</b><br>Memuat cuaca...")
+            .addTo(map);
+
+        // Reload heatmap saat peta selesai bergerak (moveend)
+        // — ini kunci agar heatmap selalu ter-update sesuai viewport
+        map.on("moveend", function() {
+            _loadHeatmap(currentLayer);
+        });
+
+        // Load heatmap awal
+        _loadHeatmap("precipitation");
+
+        setTimeout(function() {
+            mapDiv.style.width  = window.innerWidth  + "px";
+            mapDiv.style.height = window.innerHeight + "px";
+            map.invalidateSize({ animate: false });
+        }, 100);
+    }
+
+    // ════════════════════════════════════════════════════════
+    // BASE TILE — MapTiler Streets jika key ada, fallback OSM
+    // ════════════════════════════════════════════════════════
+    function _rebuildBaseTile() {
+        if (!map) return;
+        if (baseTileLayer) { map.removeLayer(baseTileLayer); baseTileLayer = null; }
+
+        if (MT_API_KEY) {
+            baseTileLayer = L.tileLayer(
+                "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=" + MT_API_KEY,
+                {
+                    maxZoom:           18,
+                    keepBuffer:        4,
+                    updateWhenIdle:    false,
                     updateWhenZooming: false,
-                    subdomains: ['a','b','c'],
-                    attribution: '\u00a9 OpenStreetMap contributors'
-                }).addTo(map);
-
-                ['precipitation_new','clouds_new','wind_new','temp_new'].forEach(function(name) {
-                    var shortName = name.replace('_new', '');
-                    weatherLayers[shortName] = L.tileLayer(
-                        'https://tile.openweathermap.org/map/' + name + '/{z}/{x}/{y}.png?appid=' + (API_KEY || ''),
-                        { opacity: 0.7, maxZoom: 18 }
-                    );
-                });
-
-                var currentIcon = L.divIcon({
-                    className: 'current-location-marker',
-                    iconSize:  [16, 16],
-                    iconAnchor:[8, 8]
-                });
-                currentMarker = L.marker([DEFAULT_LAT, DEFAULT_LON], { icon: currentIcon })
-                    .bindPopup('<b>' + DEFAULT_CITY + '</b><br>Memuat cuaca...')
-                    .addTo(map);
-
-                showSimulatedRadar('precipitation');
-
-                setTimeout(function() {
-                    setMapSize();
-                    map.invalidateSize({ animate: false });
-                }, 100);
-            }
-
-            // ── Resize ────────────────────────────────────────
-            function onResize(w, h) {
-                var mapDiv = document.getElementById('map');
-                mapDiv.style.width  = w + 'px';
-                mapDiv.style.height = h + 'px';
-                if (map) map.invalidateSize({ animate: false });
-            }
-
-            // ── Zoom ──────────────────────────────────────────
-            function zoomIn()  { if (map) map.zoomIn(); }
-            function zoomOut() { if (map) map.zoomOut(); }
-
-            // ── Kembali ke lokasi aktif ───────────────────────
-            function goToCurrentLocation() {
-                if (!map) return;
-                map.flyTo([DEFAULT_LAT, DEFAULT_LON], 12, { animate: true, duration: 1.0 });
-                if (currentMarker) currentMarker.openPopup();
-            }
-
-            // ── Ganti layer cuaca ─────────────────────────────
-            function setWeatherLayer(layerName) {
-                currentLayer = layerName;
-                if (!map) return;
-                Object.values(weatherLayers).forEach(function(l) {
-                    if (map.hasLayer(l)) map.removeLayer(l);
-                });
-                if (API_KEY && API_KEY.length > 10 && weatherLayers[layerName]) {
-                    weatherLayers[layerName].addTo(map);
+                    attribution: "\u00a9 <a href='https://www.maptiler.com/'>MapTiler</a> \u00a9 OpenStreetMap contributors"
                 }
-                showSimulatedRadar(layerName);
-            }
-
-            // ── Fly ke kota baru ──────────────────────────────
-            function flyToCity(lat, lng, name, desc) {
-                if (!map) return;
-                DEFAULT_LAT  = lat;
-                DEFAULT_LON  = lng;
-                DEFAULT_CITY = name;
-
-                map.flyTo([lat, lng], 12, { animate: true, duration: 1.2 });
-
-                if (currentMarker) {
-                    currentMarker.setLatLng([lat, lng]);
-                    currentMarker.setPopupContent('<b>' + name + '</b><br>' + desc);
-                    currentMarker.openPopup();
+            );
+        } else {
+            baseTileLayer = L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+                    maxZoom:     18,
+                    subdomains:  ["a","b","c"],
+                    attribution: "\u00a9 OpenStreetMap contributors"
                 }
+            );
+        }
+        baseTileLayer.addTo(map);
+        // Pastikan base tile selalu di bawah heatmap
+        if (heatLayer) heatLayer.bringToFront();
+    }
 
-                // Regenerate heatmap tile di lokasi baru
-                showSimulatedRadar(currentLayer || 'precipitation');
+    // ════════════════════════════════════════════════════════
+    // HEATMAP — Fetch data OWM /box/city lalu render leaflet-heat
+    // ════════════════════════════════════════════════════════
+    function _loadHeatmap(layerName) {
+        if (!map || !OWM_API_KEY) return;
+
+        var cfg    = LAYER_CONFIG[layerName] || LAYER_CONFIG.precipitation;
+        var bounds = map.getBounds();
+        var zoom   = map.getZoom();
+
+        // OWM /box/city: bbox = lon-left,lat-bot,lon-right,lat-top,zoom
+        // cnt = jumlah kota maks yang dikembalikan
+        var bbox = [
+            bounds.getWest().toFixed(4),
+            bounds.getSouth().toFixed(4),
+            bounds.getEast().toFixed(4),
+            bounds.getNorth().toFixed(4),
+            Math.min(zoom, 10)          // OWM bbox zoom maks = 10
+        ].join(",");
+
+        var url = "https://api.openweathermap.org/data/2.5/box/city"
+                + "?bbox=" + bbox
+                + "&cluster=yes"
+                + "&cnt=150"
+                + "&units=metric"
+                + "&appid=" + OWM_API_KEY;
+
+        // Tampilkan loading indicator
+        _showLoading(true);
+
+        // XMLHttpRequest — tidak butuh fetch/Promise supaya kompatibel WebView
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.timeout = 12000;
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== 4) return;
+            _showLoading(false);
+
+            if (xhr.status === 200) {
+                try {
+                    var data   = JSON.parse(xhr.responseText);
+                    var points = _parseToHeatPoints(data.list || [], cfg);
+                    _renderHeatmap(points, cfg, layerName);
+                } catch(e) {
+                    console.error("Heatmap parse error:", e);
+                }
+            } else {
+                console.error("OWM /box/city error:", xhr.status, xhr.statusText);
             }
-        </script>
-    </body>
+        };
+
+        xhr.ontimeout = function() {
+            _showLoading(false);
+            console.warn("Heatmap request timeout");
+        };
+
+        xhr.send();
+    }
+
+    // ── Konversi list kota OWM → array [lat, lng, intensity] ──
+    function _parseToHeatPoints(cities, cfg) {
+        var points = [];
+
+        for (var i = 0; i < cities.length; i++) {
+            var city  = cities[i];
+            var coord = city.coord;
+            if (!coord) continue;
+
+            var rawVal = 0;
+
+            // Ambil nilai sesuai parameter layer
+            if (cfg.owmParam === "rain") {
+                // rain bisa dalam object rain.1h atau field 3h
+                var rain = city.rain;
+                if (rain) {
+                    rawVal = (rain["1h"] || rain["3h"] || rain["volume"] || 0);
+                }
+                // Fallback: gunakan humidity jika tidak hujan
+                if (rawVal === 0 && cfg.altParam === "humidity") {
+                    var mainData = city.main;
+                    if (mainData) rawVal = (mainData.humidity || 0) * 0.1;
+                }
+            } else if (cfg.owmParam === "clouds") {
+                rawVal = city.clouds ? (city.clouds.all || 0) : 0;
+            } else if (cfg.owmParam === "speed") {
+                rawVal = city.wind ? (city.wind.speed || 0) : 0;
+            } else if (cfg.owmParam === "temp") {
+                var tempVal = city.main ? (city.main.temp || 0) : 0;
+                // Normalize suhu ke 0–1 berdasarkan range minVal..maxVal
+                var minV = cfg.minVal !== undefined ? cfg.minVal : 0;
+                rawVal   = Math.max(0, tempVal - minV);
+            }
+
+            // Normalize ke 0–1
+            var intensity = Math.min(1.0, Math.max(0, rawVal / cfg.maxVal));
+
+            // Filter titik sangat lemah agar heatmap tidak terlalu noise
+            if (intensity > 0.04) {
+                points.push([coord.Lat || coord.lat, coord.Lon || coord.lon, intensity]);
+            }
+        }
+
+        return points;
+    }
+
+    // ── Render heatmap layer ───────────────────────────────────
+    function _renderHeatmap(points, cfg, layerName) {
+        // Hapus heatmap layer sebelumnya
+        if (heatLayer && map.hasLayer(heatLayer)) {
+            map.removeLayer(heatLayer);
+            heatLayer = null;
+        }
+
+        if (points.length === 0) {
+            _updateLegend(layerName, 0);
+            return;
+        }
+
+        // Buat heatmap baru dengan leaflet-heat
+        heatLayer = L.heatLayer(points, {
+            radius:     cfg.radius      || 30,
+            blur:       cfg.blur        || 22,
+            maxZoom:    12,
+            minOpacity: cfg.minOpacity  || 0.35,
+            gradient:   cfg.gradient,
+            max:        1.0
+        });
+
+        heatLayer.addTo(map);
+        _updateLegend(layerName, points.length);
+    }
+
+    // ════════════════════════════════════════════════════════
+    // LEGEND UPDATE
+    // ════════════════════════════════════════════════════════
+    function _updateLegend(layerName, pointCount) {
+        var cfg    = LAYER_CONFIG[layerName] || LAYER_CONFIG.precipitation;
+        var legend = document.getElementById("heatmap-legend");
+        var bar    = document.getElementById("legend-bar");
+        var title  = document.getElementById("legend-title");
+        var lblMin = document.getElementById("legend-min");
+        var lblMax = document.getElementById("legend-max");
+
+        if (!legend) return;
+
+        if (pointCount === 0) {
+            legend.style.display = "none";
+            return;
+        }
+
+        title.textContent = cfg.title;
+        bar.style.background = cfg.gradientCss;
+        lblMin.textContent   = cfg.legendMin;
+        lblMax.textContent   = cfg.legendMax;
+        legend.style.display = "block";
+    }
+
+    function _showLoading(visible) {
+        var el = document.getElementById("heatmap-loading");
+        if (el) el.style.display = visible ? "block" : "none";
+    }
+
+    // ════════════════════════════════════════════════════════
+    // PUBLIC API — Dipanggil dari RadarMapController.java
+    // Signature semua fungsi di bawah TIDAK BERUBAH
+    // ════════════════════════════════════════════════════════
+
+    // Ganti layer — setWeatherLayer('precipitation'|'clouds'|'wind'|'temp')
+    function setWeatherLayer(layerName) {
+        currentLayer = layerName;
+        if (!map) return;
+        _loadHeatmap(layerName);
+    }
+
+    // Zoom control
+    function zoomIn()  { if (map) map.zoomIn(); }
+    function zoomOut() { if (map) map.zoomOut(); }
+
+    // Kembali ke lokasi aktif
+    function goToCurrentLocation() {
+        if (!map) return;
+        map.flyTo([DEFAULT_LAT, DEFAULT_LON], 10, { animate: true, duration: 1.0 });
+        if (currentMarker) currentMarker.openPopup();
+    }
+
+    // Fly ke kota baru (dari GeocodingService / Settings)
+    function flyToCity(lat, lng, name, desc) {
+        if (!map) return;
+        DEFAULT_LAT  = lat;
+        DEFAULT_LON  = lng;
+        DEFAULT_CITY = name;
+
+        map.flyTo([lat, lng], 10, { animate: true, duration: 1.2 });
+
+        if (currentMarker) {
+            currentMarker.setLatLng([lat, lng]);
+            currentMarker.setPopupContent("<b>" + name + "</b><br>" + desc);
+            currentMarker.openPopup();
+        }
+        // moveend event handler akan otomatis trigger _loadHeatmap()
+    }
+
+    // Resize — dipanggil saat WebView di-resize
+    function onResize(w, h) {
+        var mapDiv = document.getElementById("map");
+        mapDiv.style.width  = w + "px";
+        mapDiv.style.height = h + "px";
+        if (map) map.invalidateSize({ animate: false });
+    }
+</script>
+</body>
 </html>
