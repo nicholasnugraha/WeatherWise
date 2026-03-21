@@ -58,19 +58,20 @@ public class RadarMapController {
     }
 
     private void onMapReady() {
-        // ── Inject OWM API key (untuk tile layer OWM jika diperlukan) ──
-        String owmKey = AppConfig.getApiKey();
-        if (!owmKey.isEmpty()) {
-            webEngine.executeScript("setApiKey('" + owmKey + "');");
-        }
-
-        // ── ✅ Inject MapTiler API key ──────────────────────────
+        // ✅ FIX: MapTiler key diinjeksi DULU agar base tile selesai dibangun
         String maptilerKey = AppConfig.getMaptilerApiKey();
         if (!maptilerKey.isEmpty()) {
             webEngine.executeScript("setMaptilerApiKey('" + maptilerKey + "');");
         }
 
-        // Eksekusi pending fly-to jika ada
+        // OWM key diinjeksi SETELAH MapTiler — ini yang akan trigger _applyWeatherLayer()
+        // di atas base tile yang sudah final
+        String owmKey = AppConfig.getApiKey();
+        if (!owmKey.isEmpty()) {
+            webEngine.executeScript("setApiKey('" + owmKey + "');");
+        }
+
+        // Fly ke kota pending jika ada
         if (!Double.isNaN(pendingLat)) {
             String name = pendingName != null ? pendingName.replace("'", "\\'") : "";
             String desc = pendingDesc != null ? pendingDesc.replace("'", "\\'") : "";
@@ -80,6 +81,7 @@ public class RadarMapController {
             pendingLat = Double.NaN;
         }
     }
+
 
     private void callInitMap() {
         double w = mapWebView.getWidth();

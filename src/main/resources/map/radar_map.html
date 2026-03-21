@@ -195,32 +195,36 @@
     // BASE TILE — MapTiler jika key ada, fallback OSM
     // ════════════════════════════════════════════════════════
     function _rebuildBaseTile() {
-        if (!map) return;
-        if (baseTileLayer) { map.removeLayer(baseTileLayer); baseTileLayer = null; }
+    if (!map) return;
+    if (baseTileLayer) { map.removeLayer(baseTileLayer); baseTileLayer = null; }
 
-        if (MT_API_KEY) {
-            baseTileLayer = L.tileLayer(
-                "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=" + MT_API_KEY,
-                {
-                    maxZoom: 18, keepBuffer: 4,
-                    updateWhenIdle: false, updateWhenZooming: false,
-                    attribution: "\u00a9 <a href='https://www.maptiler.com/'>MapTiler</a> \u00a9 OSM"
-                }
-            );
-        } else {
-            baseTileLayer = L.tileLayer(
-                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                {
-                    maxZoom: 18, subdomains: ["a","b","c"],
-                    attribution: "\u00a9 OpenStreetMap contributors"
-                }
-            );
-        }
-        baseTileLayer.addTo(map);
-
-        // Pastikan weather layer tetap di atas base tile
-        if (weatherLayer) weatherLayer.bringToFront();
+    if (MT_API_KEY) {
+        baseTileLayer = L.tileLayer(
+            "https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=" + MT_API_KEY,
+            {
+                maxZoom: 18, keepBuffer: 4,
+                updateWhenIdle: false, updateWhenZooming: false,
+                attribution: "\u00a9 <a href='https://www.maptiler.com/'>MapTiler</a> \u00a9 OSM"
+            }
+        );
+    } else {
+        baseTileLayer = L.tileLayer(
+            "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 18, subdomains: ["a","b","c"],
+                attribution: "\u00a9 OpenStreetMap contributors"
+            }
+        );
     }
+    baseTileLayer.addTo(map);
+
+    // ✅ FIX: re-apply weather layer SETELAH base tile ditambahkan
+    // supaya weather layer selalu berada di atas
+    if (OWM_API_KEY && OWM_API_KEY.length >= 10) {
+        _applyWeatherLayer(currentLayer);
+    }
+}
+
 
     // ════════════════════════════════════════════════════════
     // WEATHER TILE LAYER — OWM tile overlay per layer
