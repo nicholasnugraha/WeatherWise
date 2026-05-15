@@ -3,8 +3,6 @@ package com.weatherwise.map
 import android.content.Context
 import android.util.Log
 import android.util.LruCache
-import com.google.android.gms.maps.model.Tile
-import com.google.android.gms.maps.model.TileProvider
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
@@ -18,7 +16,7 @@ class OpenWeatherTileProvider(
     private val tileSize: Int = 256,
     private val maxRetry: Int = 2,
     private val onTileError: ((String) -> Unit)? = null
-) : TileProvider {
+) {
 
     data class TileErrorMetadata(val code: Int?, val message: String)
 
@@ -47,10 +45,6 @@ class OpenWeatherTileProvider(
     }
     private val inFlightRequests = ConcurrentHashMap<String, Any>()
 
-    override fun getTile(x: Int, y: Int, zoom: Int): Tile {
-        val bytes = fetchTileBytes(x, y, zoom)
-        return if (bytes != null) Tile(tileSize, tileSize, bytes) else TileProvider.NO_TILE
-    }
 
     fun prefetchAround(centerX: Int, centerY: Int, zoom: Int, radius: Int = 1) {
         for (dx in -radius..radius) {

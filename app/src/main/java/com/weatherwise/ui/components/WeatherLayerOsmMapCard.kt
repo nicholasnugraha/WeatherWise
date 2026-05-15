@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
 import com.weatherwise.map.OpenWeatherTileProvider
 import com.weatherwise.map.TileSources
@@ -43,7 +44,7 @@ import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
-import org.osmdroid.views.MapListener
+import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
 import org.osmdroid.views.overlay.TilesOverlay
@@ -118,7 +119,7 @@ fun WeatherLayerOsmMapCard(lat: Double, lon: Double, modifier: Modifier = Modifi
 
     LaunchedEffect(enabled, opacity, weatherOverlay) {
         weatherOverlay?.isEnabled = enabled
-        weatherOverlay?.colorFilter = PorterDuffColorFilter(AndroidColor.argb((opacity * 255).toInt(), 255, 255, 255), PorterDuff.Mode.MULTIPLY)
+        weatherOverlay?.setColorFilter(PorterDuffColorFilter(AndroidColor.argb((opacity * 255).toInt(), 255, 255, 255), PorterDuff.Mode.MULTIPLY))
         mapView.invalidate()
         isLoading = true
         delay(300)
