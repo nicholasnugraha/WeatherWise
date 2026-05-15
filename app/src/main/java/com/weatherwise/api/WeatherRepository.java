@@ -23,6 +23,7 @@ public class WeatherRepository {
     private static final String TAG = "WeatherRepository";
 
     private final WeatherApiService weatherService;
+    private final WeatherApiService oneCallService;
     private final WeatherApiService geocodingService;
 
     // ── LiveData yang diobservasi ViewModel ────────────────────
@@ -42,9 +43,11 @@ public class WeatherRepository {
     // Simpan koordinat terakhir untuk refresh
     private double lastLat = 0;
     private double lastLon = 0;
+    private String units = AppConstants.UNITS;
 
     public WeatherRepository() {
         weatherService   = RetrofitClient.getWeatherService();
+        oneCallService   = RetrofitClient.getOneCallService();
         geocodingService = RetrofitClient.getGeocodingService();
     }
 
@@ -108,7 +111,7 @@ public class WeatherRepository {
         weatherService.getCurrentWeatherByCoord(
                 lat, lon,
                 AppConstants.API_KEY,
-                AppConstants.UNITS,
+                units,
                 AppConstants.LANG
         ).enqueue(new Callback<CurrentWeatherResponse>() {
 
@@ -144,10 +147,10 @@ public class WeatherRepository {
     // Dipanggil setelah getCurrentWeather berhasil
     // ──────────────────────────────────────────────────────────
     private void fetchOneCallData(double lat, double lon) {
-        weatherService.getOneCallData(
+        oneCallService.getOneCallData(
                 lat, lon,
                 AppConstants.API_KEY,
-                AppConstants.UNITS,
+                units,
                 AppConstants.LANG,
                 "minutely"           // exclude minutely → hemat bandwidth
         ).enqueue(new Callback<OneCallResponse>() {
@@ -174,6 +177,19 @@ public class WeatherRepository {
                 Log.w(TAG, "OneCall request gagal: " + t.getMessage());
             }
         });
+    }
+
+
+    // ──────────────────────────────────────────────────────────
+    // PUBLIC: Set unit suhu ("metric" / "imperial")
+    // ──────────────────────────────────────────────────────────
+    public void setUnits(String newUnits) {
+        if (newUnits == null || newUnits.trim().isEmpty()) return;
+        units = newUnits.trim();
+    }
+
+    public String getUnits() {
+        return units;
     }
 
     // ──────────────────────────────────────────────────────────
