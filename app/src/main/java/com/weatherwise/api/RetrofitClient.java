@@ -1,5 +1,6 @@
 package com.weatherwise.api;
 
+import com.weatherwise.BuildConfig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -15,10 +16,13 @@ public class RetrofitClient {
     // ── Base URL — 2 endpoint berbeda di OWM ──────────────────
     private static final String BASE_URL_WEATHER  =
             "https://api.openweathermap.org/data/2.5/";
+    private static final String BASE_URL_ONECALL =
+            "https://api.openweathermap.org/data/3.0/";
     private static final String BASE_URL_GEOCODING =
             "https://api.openweathermap.org/geo/1.0/";
 
     private static Retrofit retrofitWeather   = null;
+    private static Retrofit retrofitOneCall   = null;
     private static Retrofit retrofitGeocoding = null;
 
     // ── Singleton OkHttpClient (shared kedua Retrofit) ─────────
@@ -70,6 +74,19 @@ public class RetrofitClient {
         return retrofitWeather;
     }
 
+
+    // ── Instance khusus One Call 3.0 ──────────────────────────
+    public static Retrofit getOneCallClient() {
+        if (retrofitOneCall == null) {
+            retrofitOneCall = new Retrofit.Builder()
+                    .baseUrl(BASE_URL_ONECALL)
+                    .client(buildOkHttpClient())
+                    .addConverterFactory(GsonConverterFactory.create(buildGson()))
+                    .build();
+        }
+        return retrofitOneCall;
+    }
+
     // ── Instance untuk Geocoding API ───────────────────────────
     public static Retrofit getGeocodingClient() {
         if (retrofitGeocoding == null) {
@@ -85,6 +102,10 @@ public class RetrofitClient {
     // ── Service accessor — shortcut ────────────────────────────
     public static WeatherApiService getWeatherService() {
         return getWeatherClient().create(WeatherApiService.class);
+    }
+
+    public static WeatherApiService getOneCallService() {
+        return getOneCallClient().create(WeatherApiService.class);
     }
 
     public static WeatherApiService getGeocodingService() {
