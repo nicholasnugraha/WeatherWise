@@ -4,11 +4,17 @@ plugins {
     id 'org.jetbrains.kotlin.android'  // wajib untuk Compose
 }
 
-// ── Baca local.properties untuk API Key ──────────────────────
+// ── Baca local.properties + fallback ENV/CI secret ─────────────
 def localProps = new Properties()
 def localPropsFile = rootProject.file("local.properties")
 if (localPropsFile.exists()) {
     localPropsFile.withInputStream { localProps.load(it) }
+}
+
+def resolveSecret = { String envName, String propName = envName, String defaultValue = "" ->
+    def envValue = System.getenv(envName)
+    if (envValue != null && !envValue.trim().isEmpty()) return envValue
+    return localProps.getProperty(propName, defaultValue)
 }
 
 android {
@@ -17,16 +23,15 @@ android {
 
     defaultConfig {
         applicationId "com.weatherwise"
-        minSdk 26                    // API 26 = Android 8.0, agar bisa pakai java.time.*
-        targetSdk 35                 //   (sama seperti desktop yang pakai java.time di WeatherService)
+        minSdk 26
+        targetSdk 35
         versionCode 1
         versionName "1.0"
 
-        // ── Inject API Key dari local.properties ke BuildConfig ──
-        buildConfigField "String", "WEATHER_API_KEY",
-                "\"${localProps.getProperty('WEATHER_API_KEY', '')}\""
+        // BuildConfig key default: kosong, akan dioverride per buildType.
+        buildConfigField "String", "WEATHER_API_KEY", '""'
         buildConfigField "String", "OW_TILE_BASE_URL",
-                "\"${localProps.getProperty('OW_TILE_BASE_URL', 'https://tile.openweathermap.org/map')}\""
+                "\"${resolveSecret('OW_TILE_BASE_URL', 'OW_TILE_BASE_URL', 'https://tile.openweathermap.org/map')}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -35,8 +40,16 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField "String", "WEATHER_API_KEY",
+                    "\"${resolveSecret('OW_API_KEY_DEBUG', 'WEATHER_API_KEY_DEBUG')}\""
+        }
+
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            buildConfigField "String", "WEATHER_API_KEY",
+                    "\"${resolveSecret('OW_API_KEY_RELEASE', 'WEATHER_API_KEY_RELEASE')}\""
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -44,7 +57,6 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-        // Wajib agar java.time.* (Instant, ZoneId, dll.) bisa jalan di minSdk 26
         coreLibraryDesugaringEnabled true
     }
 
@@ -54,7 +66,7 @@ android {
 
     buildFeatures {
         compose true
-        buildConfig true  // wajib di AGP 8+ agar BuildConfig ter-generate
+        buildConfig true
     }
 
     composeOptions {
@@ -69,61 +81,41 @@ android {
 }
 
 dependencies {
-
-    // ── Core Desugaring — wajib agar java.time.* jalan di Android ──
-    // WeatherService.java-mu pakai Instant, ZoneId, DateTimeFormatter
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-
-    // ── AndroidX Core ────────────────────────────────────────────
     implementation 'androidx.core:core-ktx:1.13.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.3'
     implementation 'androidx.activity:activity-compose:1.9.0'
 
-    // ── Jetpack Compose (ganti JavaFX + AtlantaFX) ──────────────
     implementation platform('androidx.compose:compose-bom:2024.06.00')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
-    implementation 'androidx.compose.material3:material3'           // ganti AtlantaFX
+    implementation 'androidx.compose.material3:material3'
     implementation 'androidx.compose.runtime:runtime-livedata'
-    implementation 'androidx.compose.material:material-icons-extended' // ganti Ikonli MDI2
+    implementation 'androidx.compose.material:material-icons-extended'
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
 
-    // ── ViewModel + LiveData (ganti controller desktop) ──────────
     implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3'
     implementation 'androidx.lifecycle:lifecycle-livedata-ktx:2.8.3'
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3'
 
-    // ── Retrofit2 + OkHttp (ganti HttpURLConnection manual) ──────
     implementation 'com.squareup.retrofit2:retrofit:2.11.0'
-    implementation 'com.squareup.retrofit2:converter-scalars:2.11.0'  // raw String → parser lama tetap jalan
+    implementation 'com.squareup.retrofit2:converter-scalars:2.11.0'
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'  // debug request/response di Logcat
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
     implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
 
-    // ── Coil (ganti Ikonli icon — load icon cuaca dari URL OWM) ──
     implementation 'io.coil-kt:coil-compose:2.6.0'
-
-    // ── org.json sudah built-in di Android SDK ───────────────────
-    // TIDAK perlu tambahkan 'org.json:json' — sudah ada, parser lama langsung jalan
-
     implementation 'com.google.code.gson:gson:2.11.0'
 
-    // Navigation Compose
     implementation 'androidx.navigation:navigation-compose:2.7.7'
-
-    // ── Navigasi antar screen ─────────────────────────────────────
     implementation 'androidx.navigation:navigation-compose:2.7.7'
-
-    // ── SharedPreferences (simpan preferensi kota, unit suhu) ────
     implementation 'androidx.preference:preference-ktx:1.2.1'
 
-    // Google Maps + TileOverlay OpenWeather
     implementation 'com.google.android.gms:play-services-maps:19.0.0'
     implementation 'com.google.maps.android:maps-compose:4.4.1'
 
-    // ── Test ──────────────────────────────────────────────────────
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
