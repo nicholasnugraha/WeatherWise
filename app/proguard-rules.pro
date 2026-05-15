@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+# Harden release artifacts (best-effort only; API key in client is never fully secret).
+-repackageclasses
+-adaptclassstrings

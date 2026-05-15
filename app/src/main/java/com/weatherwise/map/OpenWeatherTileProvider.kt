@@ -3,7 +3,7 @@ package com.weatherwise.map
 import android.util.Log
 import com.google.android.gms.maps.model.Tile
 import com.google.android.gms.maps.model.TileProvider
-import com.weatherwise.BuildConfig
+import com.weatherwise.config.OpenWeatherTileConfig
 import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -18,7 +18,6 @@ class OpenWeatherTileProvider(
     companion object {
         const val DEFAULT_FALLBACK_LAYER = "clouds_new"
         private const val TAG = "OpenWeatherTileProvider"
-        private val HOSTS = listOf("a", "b", "c")
     }
 
     override fun getTile(x: Int, y: Int, zoom: Int): Tile? {
@@ -36,8 +35,7 @@ class OpenWeatherTileProvider(
     private fun fetchTileBytes(layerName: String, x: Int, y: Int, z: Int): ByteArray? {
         repeat(maxRetry + 1) { attempt ->
             runCatching {
-                val host = HOSTS[(x + y + z + attempt) % HOSTS.size]
-                val url = URL(buildTileUrl(host, layerName, x, y, z))
+                val url = URL(buildTileUrl(layerName, x, y, z))
                 (url.openConnection() as HttpURLConnection).run {
                     connectTimeout = 3_000
                     readTimeout = 3_000
@@ -56,7 +54,8 @@ class OpenWeatherTileProvider(
         return null
     }
 
-    private fun buildTileUrl(host: String, layerName: String, x: Int, y: Int, z: Int): String {
-        return "https://$host.tile.openweathermap.org/map/$layerName/$z/$x/$y.png?appid=${BuildConfig.WEATHER_API_KEY}"
+    private fun buildTileUrl(layerName: String, x: Int, y: Int, z: Int): String {
+        val base = OpenWeatherTileConfig.TILE_BASE_URL.removeSuffix("/map")
+        return "$base/map/$layerName/$z/$x/$y.png?appid=${OpenWeatherTileConfig.API_KEY}"
     }
 }
