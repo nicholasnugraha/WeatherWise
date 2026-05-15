@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.weatherwise.model.OneCallResponse
 import com.weatherwise.ui.components.DailyForecastItem
 import com.weatherwise.ui.components.HourlyForecastRow
-import com.weatherwise.ui.components.WeatherLayerMapCard
+import com.weatherwise.ui.components.WeatherLayerOsmMapCard
 import com.weatherwise.viewmodel.WeatherViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,7 +145,7 @@ fun ForecastScreen(
                     item {
                         val lat = currentWeather?.lat ?: 0.0
                         val lon = currentWeather?.lon ?: 0.0
-                        WeatherLayerMapCard(lat = lat, lon = lon)
+                        WeatherLayerOsmMapCard(lat = lat, lon = lon)
                     }
 
                     // ── Forecast 7 hari ────────────────────────
