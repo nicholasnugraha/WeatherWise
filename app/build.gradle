@@ -30,8 +30,10 @@ android {
 
         // BuildConfig key default: kosong, akan dioverride per buildType.
         buildConfigField "String", "WEATHER_API_KEY", '""'
-        buildConfigField "String", "OW_TILE_BASE_URL",
-                "\"${resolveSecret('OW_TILE_BASE_URL', 'OW_TILE_BASE_URL', 'https://tile.openweathermap.org/map')}\""
+        buildConfigField "String", "MAP_TILE_BASE_URL",
+                "\"${resolveSecret('MAP_TILE_BASE_URL', 'MAP_TILE_BASE_URL', 'https://tile.openstreetmap.org')}\""
+        buildConfigField "String", "MAP_TILE_API_KEY",
+                "\"${resolveSecret('MAP_TILE_API_KEY', 'MAP_TILE_API_KEY', '')}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
