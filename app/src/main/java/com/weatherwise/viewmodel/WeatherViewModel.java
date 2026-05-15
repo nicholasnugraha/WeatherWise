@@ -40,6 +40,7 @@ public class WeatherViewModel extends AndroidViewModel {
         repository = new WeatherRepository();
         prefs      = application.getSharedPreferences(PREF_NAME,
                 android.content.Context.MODE_PRIVATE);
+        repository.setUnits(prefs.getString(PREF_UNITS, "metric"));
 
         // Sambungkan LiveData dari Repository
         currentWeather = repository.currentWeather;
@@ -101,6 +102,8 @@ public class WeatherViewModel extends AndroidViewModel {
         String current = prefs.getString(PREF_UNITS, "metric");
         String next    = current.equals("metric") ? "imperial" : "metric";
         prefs.edit().putString(PREF_UNITS, next).apply();
+
+        repository.setUnits(next);
 
         // Refresh data dengan satuan baru
         repository.refresh();

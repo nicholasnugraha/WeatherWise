@@ -1,5 +1,6 @@
 package com.weatherwise.api;
 
+import com.weatherwise.BuildConfig;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
