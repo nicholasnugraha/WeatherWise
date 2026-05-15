@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.weatherwise.model.OneCallResponse
 import com.weatherwise.ui.components.DailyForecastItem
 import com.weatherwise.ui.components.HourlyForecastRow
+import com.weatherwise.ui.components.WeatherLayerMapCard
 import com.weatherwise.viewmodel.WeatherViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -131,6 +132,20 @@ fun ForecastScreen(
                     }
                     item {
                         HourlyForecastRow(hourlyList = hourlyList)
+                    }
+
+                    item {
+                        Text(
+                            text     = "Peta Layer Cuaca",
+                            fontSize = 13.sp,
+                            color    = Color.White.copy(alpha = 0.65f),
+                            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                        )
+                    }
+                    item {
+                        val lat = currentWeather?.lat ?: 0.0
+                        val lon = currentWeather?.lon ?: 0.0
+                        WeatherLayerMapCard(lat = lat, lon = lon)
                     }
 
                     // ── Forecast 7 hari ────────────────────────
