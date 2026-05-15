@@ -20,6 +20,26 @@ class OpenWeatherTileProvider(
     private val onTileError: ((String) -> Unit)? = null
 ) : TileProvider {
 
+    data class TileErrorMetadata(val code: Int?, val message: String)
+
+    companion object {
+        fun toUserMessage(code: Int?): String = when (code) {
+            401 -> "Akses tile ditolak (401). Periksa API key/plan OpenWeather."
+            429 -> "Batas request tile tercapai (429). Coba lagi sebentar."
+            500, 502, 503, 504 -> "Layanan tile sedang gangguan (${code}). Coba lagi nanti."
+            else -> "Tile tidak tersedia sementara. Coba lagi beberapa saat."
+        }
+    }
+
+    private var lastErrorCode: Int? = null
+
+    fun consumeLastErrorMetadata(): TileErrorMetadata? {
+        val code = lastErrorCode ?: return null
+        lastErrorCode = null
+        return TileErrorMetadata(code, toUserMessage(code))
+    }
+
+
     private val appContext = context.applicationContext
     private val tileCacheDir = File(appContext.cacheDir, "map_tiles").apply { mkdirs() }
     private val memoryCache = object : LruCache<String, ByteArray>(8 * 1024 * 1024) {
@@ -53,17 +73,23 @@ class OpenWeatherTileProvider(
 
         try {
             repeat(maxRetry + 1) { attempt ->
-                val bytes = runCatching {
+                val result = runCatching {
                     val connection = URL(tileSource.tileUrl(x, y, z)).openConnection() as HttpURLConnection
                     connection.connectTimeout = 3_000
                     connection.readTimeout = 3_000
+                    val code = connection.responseCode
+                    if (code != HttpURLConnection.HTTP_OK) {
+                        lastErrorCode = code
+                        return@runCatching null
+                    }
                     connection.inputStream.use { input ->
                         ByteArrayOutputStream().use { out ->
                             input.copyTo(out)
                             out.toByteArray()
                         }
                     }
-                }.getOrNull()
+                }
+                val bytes = result.getOrNull()
 
                 if (bytes != null) {
                     memoryCache.put(cacheKey, bytes)
@@ -77,7 +103,7 @@ class OpenWeatherTileProvider(
             inFlightRequests.remove(cacheKey)
         }
 
-        val message = "Tile provider error (${tileSource.id})."
+        val message = toUserMessage(lastErrorCode)
         onTileError?.invoke(message)
         Log.w("TileProvider", "Failed tile for ${tileSource.id}: x=$x y=$y z=$z")
         return null
