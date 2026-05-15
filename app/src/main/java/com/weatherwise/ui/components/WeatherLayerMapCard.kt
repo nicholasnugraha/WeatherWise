@@ -1,5 +1,6 @@
 package com.weatherwise.ui.components
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -35,10 +37,22 @@ import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.TileOverlay
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberTileOverlayState
+import com.weatherwise.config.OpenWeatherTileConfig
 import com.weatherwise.map.OpenWeatherTileProvider
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
+import java.net.URL
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+private const val PREFS_NAME = "radar_preferences"
+private const val PREF_LAYER = "last_layer"
+private const val PREF_OPACITY = "last_opacity"
 
 @Composable
 fun WeatherLayerMapCard(
@@ -46,12 +60,25 @@ fun WeatherLayerMapCard(
     lon: Double,
     modifier: Modifier = Modifier
 ) {
-    val layers = listOf("precipitation_new" to "Precipitation", "clouds_new" to "Clouds")
-    var selectedLayer by remember { mutableStateOf(layers.first().first) }
-    var enabled by remember { mutableStateOf(true) }
-    var opacity by remember { mutableFloatStateOf(0.75f) }
-    var isLoading by remember { mutableStateOf(true) }
+    val layers = listOf(
+        "precipitation_new" to "Radar",
+        "clouds_new" to "Clouds",
+        "wind_new" to "Wind",
+        "pressure_new" to "Pressure"
+    )
     val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
+
+    var selectedLayer by remember {
+        mutableStateOf(prefs.getString(PREF_LAYER, layers.first().first) ?: layers.first().first)
+    }
+    var enabled by remember { mutableStateOf(true) }
+    var opacity by remember {
+        mutableFloatStateOf(prefs.getFloat(PREF_OPACITY, 0.75f).coerceIn(0.2f, 1f))
+    }
+    var isLoading by remember { mutableStateOf(true) }
+    var lastUpdatedText by remember { mutableStateOf<String?>(null) }
+    var radarError by remember { mutableStateOf<String?>(null) }
 
     val cameraPositionState = rememberCameraPositionState {
         position = com.google.android.gms.maps.model.CameraPosition.fromLatLngZoom(LatLng(lat, lon), 6f)
@@ -60,8 +87,16 @@ fun WeatherLayerMapCard(
         OpenWeatherTileProvider(context = context, layer = selectedLayer)
     }
 
+    LaunchedEffect(selectedLayer, opacity) {
+        prefs.edit().putString(PREF_LAYER, selectedLayer).putFloat(PREF_OPACITY, opacity).apply()
+    }
+
     LaunchedEffect(selectedLayer) {
         isLoading = true
+        radarError = null
+        val metadata = fetchLayerMetadata(selectedLayer)
+        lastUpdatedText = metadata.lastUpdated
+        radarError = metadata.errorMessage
         delay(500)
         isLoading = false
     }
@@ -89,7 +124,11 @@ fun WeatherLayerMapCard(
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f))
     ) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Weather Layer Map", style = MaterialTheme.typography.titleMedium, color = Color.White)
+            Text("Peta Radar Cuaca", style = MaterialTheme.typography.titleMedium, color = Color.White)
+            Button(onClick = {
+                enabled = true
+                selectedLayer = "precipitation_new"
+            }) { Text("Radar") }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 layers.forEach { (layerKey, label) ->
@@ -109,6 +148,14 @@ fun WeatherLayerMapCard(
             Text("Opacity ${(opacity * 100).toInt()}%", color = Color.White)
             Slider(value = opacity, onValueChange = { opacity = it }, valueRange = 0.2f..1f)
 
+            lastUpdatedText?.let {
+                Text("Last updated: $it", style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
+            }
+
+            radarError?.let {
+                Text(it, color = Color(0xFFFFCDD2), style = MaterialTheme.typography.bodyMedium)
+            }
+
             Box {
                 GoogleMap(
                     modifier = Modifier
@@ -119,7 +166,7 @@ fun WeatherLayerMapCard(
                     uiSettings = MapUiSettings(zoomControlsEnabled = false),
                     properties = MapProperties(isMyLocationEnabled = false)
                 ) {
-                    if (enabled) {
+                    if (enabled && radarError == null) {
                         TileOverlay(
                             tileOverlayState = rememberTileOverlayState(),
                             tileProvider = tileProvider,
@@ -138,12 +185,39 @@ fun WeatherLayerMapCard(
                     )
                 }
             }
-
-            Text(
-                text = "Map data © OpenWeather (Weather Maps 2.0).",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.75f)
-            )
         }
+    }
+}
+
+data class RadarLayerMetadata(
+    val lastUpdated: String?,
+    val errorMessage: String?
+)
+
+private suspend fun fetchLayerMetadata(layer: String): RadarLayerMetadata = withContext(Dispatchers.IO) {
+    val base = OpenWeatherTileConfig.TILE_BASE_URL.removeSuffix("/map")
+    val metadataUrl = "$base/map/$layer.json?appid=${OpenWeatherTileConfig.API_KEY}"
+    runCatching {
+        val connection = (URL(metadataUrl).openConnection() as HttpURLConnection).apply {
+            connectTimeout = 4_000
+            readTimeout = 4_000
+        }
+        connection.useCaches = false
+        val code = connection.responseCode
+        when (code) {
+            200 -> {
+                val updatedUnix = connection.getHeaderField("X-Last-Updated")?.toLongOrNull()
+                val updated = updatedUnix?.let {
+                    DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm")
+                        .withZone(ZoneId.systemDefault())
+                        .format(Instant.ofEpochSecond(it))
+                }
+                RadarLayerMetadata(updated, null)
+            }
+            429 -> RadarLayerMetadata(null, "batas kuota tercapai")
+            else -> RadarLayerMetadata(null, "data radar tidak tersedia")
+        }
+    }.getOrElse {
+        RadarLayerMetadata(null, "data radar tidak tersedia")
     }
 }
