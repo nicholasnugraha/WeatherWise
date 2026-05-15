@@ -23,6 +23,7 @@ public class WeatherRepository {
     private static final String TAG = "WeatherRepository";
 
     private final WeatherApiService weatherService;
+    private final WeatherApiService oneCallService;
     private final WeatherApiService geocodingService;
 
     // ── LiveData yang diobservasi ViewModel ────────────────────
@@ -46,6 +47,7 @@ public class WeatherRepository {
 
     public WeatherRepository() {
         weatherService   = RetrofitClient.getWeatherService();
+        oneCallService   = RetrofitClient.getOneCallService();
         geocodingService = RetrofitClient.getGeocodingService();
     }
 
@@ -145,7 +147,7 @@ public class WeatherRepository {
     // Dipanggil setelah getCurrentWeather berhasil
     // ──────────────────────────────────────────────────────────
     private void fetchOneCallData(double lat, double lon) {
-        weatherService.getOneCallData(
+        oneCallService.getOneCallData(
                 lat, lon,
                 AppConstants.API_KEY,
                 units,
