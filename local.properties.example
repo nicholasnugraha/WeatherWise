@@ -5,5 +5,8 @@ WEATHER_API_KEY_DEBUG=your_openweather_debug_key
 # Release key should be dedicated for production usage.
 WEATHER_API_KEY_RELEASE=your_openweather_release_key
 
-# Optional override (default shown below)
-OW_TILE_BASE_URL=https://tile.openweathermap.org/map
+# Public OSM tile URL for prototype.
+MAP_TILE_BASE_URL=https://tile.openstreetmap.org
+
+# Optional API key (leave empty for public providers like OSM).
+MAP_TILE_API_KEY=
