@@ -1,166 +1,115 @@
 package com.weatherwise.ui.components
 
-import android.content.Context
-import android.graphics.Color as AndroidColor
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
+import android.annotation.SuppressLint
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.unit.dp
-import com.weatherwise.map.OpenWeatherTileProvider
-import com.weatherwise.map.TileSources
-import com.weatherwise.map.WeatherLayer
-import kotlinx.coroutines.delay
-import org.osmdroid.config.Configuration
-import org.osmdroid.tileprovider.MapTileProviderBasic
-import org.osmdroid.tileprovider.tilesource.OnlineTileSourceBase
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.util.MapTileIndex
-import org.osmdroid.views.MapView
-import org.osmdroid.events.MapListener
-import org.osmdroid.events.ScrollEvent
-import org.osmdroid.events.ZoomEvent
-import org.osmdroid.views.overlay.TilesOverlay
-
-private const val PREFS_NAME = "radar_preferences"
-private const val PREF_OPACITY = "last_opacity"
+import androidx.compose.ui.viewinterop.AndroidView
+import com.weatherwise.BuildConfig
 
 @Composable
 fun WeatherLayerOsmMapCard(lat: Double, lon: Double, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val prefs = remember { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
+    val apiKey = BuildConfig.WEATHER_API_KEY
 
-    var enabled by remember { mutableStateOf(true) }
-    var opacity by remember { mutableFloatStateOf(prefs.getFloat(PREF_OPACITY, 0.85f).coerceIn(0.2f, 1f)) }
-    var isLoading by remember { mutableStateOf(true) }
-    var tileError by remember { mutableStateOf<String?>(null) }
-    var layer by remember { mutableStateOf(WeatherLayer.PRECIPITATION) }
-    var viewportTick by remember { mutableIntStateOf(0) }
+    val html = remember(apiKey) { buildLeafletHtml(apiKey) }
 
-    val tileSource = remember(layer) { TileSources.weather(layer) }
-    val provider = remember(tileSource) {
-        OpenWeatherTileProvider(context = context, tileSource = tileSource, onTileError = { tileError = it })
-    }
-
-    val mapView = remember {
-        Configuration.getInstance().load(context, prefs)
-        MapView(context).apply {
-            setTileSource(org.osmdroid.tileprovider.tilesource.TileSourceFactory.MAPNIK)
-            setMultiTouchControls(true)
-            controller.setZoom(6.0)
-            controller.setCenter(GeoPoint(lat, lon))
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f))
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text("Peta Cuaca", style = MaterialTheme.typography.titleMedium, color = Color.White)
+            AndroidView(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .height(260.dp),
+                factory = {
+                    WebView(context).apply {
+                        setupForLeaflet()
+                        loadDataWithBaseURL("https://localhost/", html, "text/html", "utf-8", null)
+                    }
+                },
+                update = { webView ->
+                    webView.evaluateJavascript("window.updateWeatherMap($lat, $lon);", null)
+                }
+            )
+            Text(
+                text = "© OpenStreetMap contributors · © OpenWeatherMap",
+                color = Color.White.copy(alpha = 0.8f),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
     }
 
-    val weatherOverlay = remember(mapView, tileSource) {
-        runCatching {
-            val providerBasic = MapTileProviderBasic(context, object : OnlineTileSourceBase(
-                tileSource.id, 0, 18, 256, ".png", arrayOf(tileSource.tileBaseUrl.trimEnd('/')), tileSource.attribution
-            ) {
-                override fun getTileURLString(aMapTileIndex: Long): String {
-                    val z = MapTileIndex.getZoom(aMapTileIndex)
-                    val x = MapTileIndex.getX(aMapTileIndex)
-                    val y = MapTileIndex.getY(aMapTileIndex)
-                    return tileSource.tileUrl(x, y, z)
-                }
-            })
-            TilesOverlay(providerBasic, context).also {
-                mapView.overlays.removeAll { overlay -> overlay is TilesOverlay && overlay != it }
-                mapView.overlays.add(it)
-            }
-        }.onFailure {
-            tileError = "Tile tidak tersedia sementara. Coba lagi beberapa saat."
-        }.getOrNull()
-    }
-
-    DisposableEffect(mapView) {
-        mapView.onResume()
-        onDispose { mapView.onPause() }
-    }
-
-    DisposableEffect(mapView) {
-        val listener = object : MapListener {
-            override fun onScroll(event: ScrollEvent?): Boolean { viewportTick++; return false }
-            override fun onZoom(event: ZoomEvent?): Boolean { viewportTick++; return false }
-        }
-        mapView.addMapListener(listener)
-        onDispose { mapView.removeMapListener(listener) }
-    }
-
-    LaunchedEffect(lat, lon) { mapView.controller.setCenter(GeoPoint(lat, lon)) }
-    LaunchedEffect(opacity) { prefs.edit().putFloat(PREF_OPACITY, opacity).apply() }
-
-    LaunchedEffect(enabled, opacity, weatherOverlay) {
-        weatherOverlay?.isEnabled = enabled
-        weatherOverlay?.setColorFilter(PorterDuffColorFilter(AndroidColor.argb((opacity * 255).toInt(), 255, 255, 255), PorterDuff.Mode.MULTIPLY))
-        mapView.invalidate()
-        isLoading = true
-        delay(300)
-        isLoading = false
-    }
-
-    LaunchedEffect(viewportTick, layer) {
-        val zoom = mapView.zoomLevelDouble.toInt().coerceIn(0, 18)
-        val world = 1 shl zoom
-        val center = mapView.mapCenter as GeoPoint
-        val sinLat = kotlin.math.sin(Math.toRadians(center.latitude))
-        val x = (((center.longitude + 180.0) / 360.0) * world).toInt()
-        val y = ((0.5 - kotlin.math.ln((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * world).toInt()
-        provider.prefetchAround(x, y, zoom, radius = 1)
-        provider.consumeLastErrorMetadata()?.let { tileError = it.message }
-    }
-
-    Card(modifier = modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f))) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Peta Cuaca (OSM)", style = MaterialTheme.typography.titleMedium, color = Color.White)
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text("Layer aktif", color = Color.White)
-                Switch(checked = enabled, onCheckedChange = { enabled = it })
-            }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                WeatherLayer.entries.forEach { item ->
-                    TextButton(onClick = { layer = item }) { Text(item.label, color = if (item == layer) Color.White else Color.White.copy(alpha = 0.65f)) }
-                }
-            }
-            Text("Opacity ${(opacity * 100).toInt()}%", color = Color.White)
-            Slider(value = opacity, onValueChange = { opacity = it }, valueRange = 0.2f..1f)
-            tileError?.let { Text(it, color = Color(0xFFFFCDD2)) }
-            Box {
-                AndroidView(factory = { mapView }, modifier = Modifier.fillMaxWidth().padding(top = 4.dp).height(240.dp), update = {
-                    it.controller.setCenter(GeoPoint(lat, lon))
-                })
-                if (isLoading && enabled) {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.White, trackColor = Color.White.copy(alpha = 0.25f))
-                }
-            }
-            Text(tileSource.attribution, color = Color.White.copy(alpha = 0.8f), style = MaterialTheme.typography.bodySmall)
-        }
+    LaunchedEffect(apiKey) {
+        // Keep composable stable; warning message rendered inside HTML if key is empty.
     }
 }
+
+@SuppressLint("SetJavaScriptEnabled")
+private fun WebView.setupForLeaflet() {
+    webViewClient = WebViewClient()
+    settings.apply {
+        javaScriptEnabled = true
+        domStorageEnabled = true
+        cacheMode = WebSettings.LOAD_DEFAULT
+        allowFileAccess = false
+        allowContentAccess = false
+    }
+    setBackgroundColor(android.graphics.Color.TRANSPARENT)
+}
+
+private fun buildLeafletHtml(apiKey: String): String = """
+<!doctype html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body { margin:0; padding:0; background:transparent; }
+    #map { width:100%; height:100vh; }
+    .warn { position:absolute; top:8px; left:8px; right:8px; z-index:9999; background:#b71c1c; color:#fff; padding:8px; border-radius:8px; font:12px sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="warn" class="warn" style="display:none;">API key OpenWeather belum diset.</div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const apiKey = "$apiKey";
+    if (!apiKey) document.getElementById('warn').style.display = 'block';
+
+    const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([0,0], 6);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    const weather = L.tileLayer(
+      `https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=${apiKey}`,
+      { maxZoom: 19, opacity: 0.85 }
+    ).addTo(map);
+
+    window.updateWeatherMap = function(lat, lon) {
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      map.setView([lat, lon], 6, { animate: false });
+    }
+  </script>
+</body>
+</html>
+""".trimIndent()
