@@ -12,6 +12,7 @@ import com.weatherwise.viewmodel.WeatherViewModel
 object Routes {
     const val HOME     = "home"
     const val FORECAST = "forecast"
+    // const val MAP      = "map"  // Disembunyikan sementara
 }
 
 @Composable

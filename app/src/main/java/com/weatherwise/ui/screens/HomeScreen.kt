@@ -1,5 +1,6 @@
 package com.weatherwise.ui.screens
 
+import android.Manifest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,19 +16,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.weatherwise.model.CurrentWeather
 import com.weatherwise.model.OneCallResponse
 import com.weatherwise.ui.components.*
+import com.weatherwise.util.LocationManager
 import com.weatherwise.viewmodel.WeatherViewModel
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun HomeScreen(
     viewModel: WeatherViewModel,
     onSeeFullForecast: () -> Unit
 ) {
+    val context = LocalContext.current
     // ── Observasi LiveData dari ViewModel ──────────────────────
     val currentWeather by viewModel.currentWeather.observeAsState()
     val oneCallData    by viewModel.oneCallData.observeAsState()
@@ -158,6 +167,14 @@ fun HomeScreen(
         PullToRefreshContainer(
             state    = pullRefreshState,
             modifier = Modifier.align(Alignment.TopCenter)
+        )
+        
+        // GPS FAB
+        GPSFab(
+            viewModel = viewModel,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
         )
     }
 }

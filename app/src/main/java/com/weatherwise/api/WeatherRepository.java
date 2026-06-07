@@ -124,6 +124,12 @@ public class WeatherRepository {
                             WeatherParser.parseCurrentWeather(response.body());
                     _currentWeather.setValue(parsed);
 
+                    // Update nama kota dari response API (penting untuk fitur GPS)
+                    String apiCityName = response.body().cityName;
+                    if (apiCityName != null && !apiCityName.isEmpty()) {
+                        _currentCityName.setValue(apiCityName);
+                    }
+
                     // Lanjut fetch OneCall untuk hourly + daily + alerts
                     fetchOneCallData(lat, lon);
 

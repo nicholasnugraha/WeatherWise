@@ -13,6 +13,7 @@ import com.weatherwise.viewmodel.WeatherViewModel
 object Routes {
     const val HOME     = "home"
     const val FORECAST = "forecast"
+    // const val MAP      = "map"  // Disembunyikan sementara
 }
 
 @Composable
@@ -25,7 +26,7 @@ fun WeatherWiseApp(viewModel: WeatherViewModel) {
     ) {
         composable(Routes.HOME) {
             HomeScreen(
-                viewModel    = viewModel,
+                viewModel         = viewModel,
                 onSeeFullForecast = { navController.navigate(Routes.FORECAST) }
             )
         }

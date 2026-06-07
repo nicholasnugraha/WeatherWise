@@ -20,10 +20,13 @@ public class RetrofitClient {
             "https://api.openweathermap.org/data/3.0/";
     private static final String BASE_URL_GEOCODING =
             "https://api.openweathermap.org/geo/1.0/";
+    private static final String BASE_URL_RAINVIEWER =
+            "https://api.rainviewer.com/";
 
     private static Retrofit retrofitWeather   = null;
     private static Retrofit retrofitOneCall   = null;
     private static Retrofit retrofitGeocoding = null;
+    private static Retrofit retrofitRainViewer = null;
 
     // ── Singleton OkHttpClient (shared kedua Retrofit) ─────────
     private static OkHttpClient buildOkHttpClient() {
@@ -97,6 +100,18 @@ public class RetrofitClient {
                     .build();
         }
         return retrofitGeocoding;
+    }
+
+    // ── Instance untuk RainViewer API ───────────────────────────
+    public static Retrofit getRainViewerClient() {
+        if (retrofitRainViewer == null) {
+            retrofitRainViewer = new Retrofit.Builder()
+                    .baseUrl(BASE_URL_RAINVIEWER)
+                    .client(buildOkHttpClient())
+                    .addConverterFactory(GsonConverterFactory.create(buildGson()))
+                    .build();
+        }
+        return retrofitRainViewer;
     }
 
     // ── Service accessor — shortcut ────────────────────────────
