@@ -26,6 +26,7 @@ import com.weatherwise.model.CurrentWeather
 import com.weatherwise.model.OneCallResponse
 import com.weatherwise.ui.components.*
 import com.weatherwise.util.LocationManager
+import com.weatherwise.util.hapticClick
 import com.weatherwise.viewmodel.WeatherViewModel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -157,7 +158,9 @@ fun HomeScreen(
                         contentColor = Color.White
                     ),
                     border  = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.6f)),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .hapticClick { onSeeFullForecast() }
                 ) {
                     Text("Lihat Prakiraan 7 Hari →")
                 }

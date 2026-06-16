@@ -21,6 +21,7 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.weatherwise.ui.components.GPSButton
 import com.weatherwise.util.LocationManager
 import com.weatherwise.util.WeatherTileSource
+import com.weatherwise.util.hapticClick
 import com.weatherwise.viewmodel.MapViewModel
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -147,7 +148,8 @@ fun MapScreen(
                     FloatingActionButton(
                         onClick = { viewModel.togglePlayPause() },
                         containerColor = if (isPlaying) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = if (isPlaying) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                        contentColor = if (isPlaying) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.hapticClick { viewModel.togglePlayPause() }
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -166,7 +168,8 @@ fun MapScreen(
                 FloatingActionButton(
                     onClick = { viewModel.cycleLayer() },
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.hapticClick { viewModel.cycleLayer() }
                 ) {
                     Icon(
                         Icons.Default.Layers,
