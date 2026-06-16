@@ -58,3 +58,20 @@ data class ForecastDaily(
     val conditionIcon: String,
     val humidity: Int
 )
+
+// Geocoding Models for Search Autocomplete
+data class GeocodingResponse(
+    @SerializedName("name") val name: String,
+    @SerializedName("lat") val lat: Double,
+    @SerializedName("lon") val lon: Double,
+    @SerializedName("country") val country: String,
+    @SerializedName("state") val state: String? = null
+)
+
+// Weather Alert Model
+data class WeatherAlert(
+    val senderName: String,
+    val event: String,
+    val description: String,
+    val severity: String // "Extreme", "Severe", "Moderate", "Minor"
+)
