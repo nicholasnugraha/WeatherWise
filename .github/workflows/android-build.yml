@@ -1,0 +1,66 @@
+name: Android CI & Release
+
+on:
+  push:
+    branches: [ "android-stable", "main" ]
+    tags:
+      - 'v*' # Memicu release otomatis saat push tag versi (misal: v1.0.0)
+  pull_request:
+    branches: [ "android-stable", "main" ]
+  workflow_dispatch: # Memicu build & release manual dari tab Actions
+
+jobs:
+  build:
+    name: Build & Release Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle (Debug)
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Build with Gradle (Release - Unsigned)
+        # Membangun release untuk memvalidasi aturan ProGuard/R8
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload Debug APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: weatherwise-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+
+      - name: Create GitHub Release
+        # Hanya jalankan step ini jika dipicu manual (workflow_dispatch) atau push tag versi (v*)
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          # Jika manual, gunakan tag build-{nomor_run}. Jika tag versi, gunakan nama tag tersebut.
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && format('build-{0}', github.run_number) || github.ref_name }}
+          name: ${{ github.event_name == 'workflow_dispatch' && format('Build Otomatis #{0}', github.run_number) || github.ref_name }}
+          body: |
+            🚀 **Build Otomatis WeatherWise**
+            
+            - **Triggered by:** ${{ github.event_name }}
+            - **Commit:** ${{ github.sha }}
+            - **Branch/Tag:** ${{ github.ref_name }}
+            
+            File APK tersedia di bagian "Assets" di bawah.
+          files: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/release/app-release-unsigned.apk
+          draft: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
