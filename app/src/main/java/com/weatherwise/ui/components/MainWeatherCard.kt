@@ -9,20 +9,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.weatherwise.model.CurrentWeather
 
 @Composable
 fun MainWeatherCard(weather: CurrentWeather) {
-    val iconUrl = "https://openweathermap.org/img/wn/${weather.conditionIcon}@4x.png"
-
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
 
-        // Icon cuaca dari OWM — Coil load otomatis
-        AsyncImage(
-            model             = iconUrl,
-            contentDescription = weather.condition,
-            modifier          = Modifier.size(120.dp)
+        // Animasi cuaca dinamis menggunakan Lottie
+        WeatherLottieAnimation(
+            condition = weather.condition,
+            modifier = Modifier.size(140.dp),
+            speed = 1.0f
         )
 
         // Suhu utama — besar dan bold
