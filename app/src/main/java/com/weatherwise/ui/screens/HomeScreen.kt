@@ -11,7 +11,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -38,11 +38,12 @@ fun HomeScreen(
 ) {
     val context = LocalContext.current
     // ── Observasi LiveData dari ViewModel ──────────────────────
-    val currentWeather by viewModel.currentWeather.observeAsState()
-    val oneCallData    by viewModel.oneCallData.observeAsState()
-    val cityName       by viewModel.cityName.observeAsState("")
-    val isLoading      by viewModel.isLoading.observeAsState(false)
-    val errorMessage   by viewModel.errorMessage.observeAsState()
+    val currentWeather by viewModel.currentWeather.collectAsStateWithLifecycle()
+    val hourlyForecast by viewModel.hourlyForecast.collectAsStateWithLifecycle()
+    val dailyForecast  by viewModel.dailyForecast.collectAsStateWithLifecycle()
+    val cityName       by viewModel.cityName.collectAsStateWithLifecycle("")
+    val isLoading      by viewModel.isLoading.collectAsStateWithLifecycle(false)
+    val errorMessage   by viewModel.errorMessage.collectAsStateWithLifecycle()
 
     // ── State lokal untuk search bar ───────────────────────────
     var searchQuery by remember { mutableStateOf("") }
@@ -139,8 +140,8 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Forecast hourly — scroll horizontal 48 jam
-                oneCallData?.hourly?.let { hourlyList ->
-                    HourlyForecastRow(hourlyList = hourlyList.take(24))
+                if (hourlyForecast.isNotEmpty()) {
+                    HourlyForecastRow(hourlyList = hourlyForecast)
                     Spacer(modifier = Modifier.height(16.dp))
                 }
 

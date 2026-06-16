@@ -8,7 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -16,7 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.weatherwise.model.OneCallResponse
+import com.weatherwise.model.CurrentWeather
+import com.weatherwise.model.ForecastDaily
+import com.weatherwise.model.ForecastHourly
 import com.weatherwise.ui.components.DailyForecastItem
 import com.weatherwise.ui.components.HourlyForecastRow
 import com.weatherwise.viewmodel.WeatherViewModel
@@ -27,22 +29,10 @@ fun ForecastScreen(
     viewModel : WeatherViewModel,
     onBack    : () -> Unit
 ) {
-    val currentWeather by viewModel.currentWeather.observeAsState()
-    val oneCallData    by viewModel.oneCallData.observeAsState()
-    val cityName       by viewModel.cityName.observeAsState("")
-
-    // Ambil data daily — lewati hari ini (index 0)
-    val dailyList = remember(oneCallData) {
-        oneCallData?.daily?.let { daily ->
-            if (daily.size > 1) daily.subList(1, minOf(8, daily.size))
-            else emptyList()
-        } ?: emptyList()
-    }
-
-    // Ambil data hourly 48 jam
-    val hourlyList = remember(oneCallData) {
-        oneCallData?.hourly?.take(48) ?: emptyList()
-    }
+    val currentWeather by viewModel.currentWeather.collectAsStateWithLifecycle()
+    val hourlyForecast by viewModel.hourlyForecast.collectAsStateWithLifecycle()
+    val dailyForecast  by viewModel.dailyForecast.collectAsStateWithLifecycle()
+    val cityName       by viewModel.cityName.collectAsStateWithLifecycle("")
 
     // Gradient sama dengan HomeScreen berdasarkan icon cuaca
     val gradientColors = remember(currentWeather?.conditionIcon) {
@@ -90,7 +80,7 @@ fun ForecastScreen(
             )
 
             // ── Konten Utama ───────────────────────────────────
-            if (oneCallData == null) {
+            if (dailyForecast.isEmpty() && currentWeather == null) {
                 // Empty state jika data belum tersedia
                 Box(
                     modifier         = Modifier.fillMaxSize(),
@@ -110,62 +100,52 @@ fun ForecastScreen(
                 ) {
 
                     // ── Ringkasan hari ini ─────────────────────
-                    item {
-                        TodaySummaryCard(
-                            current = currentWeather,
-                            today   = oneCallData?.daily?.firstOrNull()
-                        )
+                    if (currentWeather != null && dailyForecast.isNotEmpty()) {
+                        item {
+                            TodaySummaryCard(
+                                current = currentWeather!!,
+                                today   = dailyForecast.firstOrNull()
+                            )
+                        }
                     }
 
-                    // ── Forecast per jam (48 jam) ──────────────
-                    item {
-                        Text(
-                            text     = "Per Jam",
-                            fontSize = 13.sp,
-                            color    = Color.White.copy(alpha = 0.65f),
-                            modifier = Modifier.padding(
-                                top    = 4.dp,
-                                bottom = 2.dp
+                    // ── Forecast per jam ──────────────
+                    if (hourlyForecast.isNotEmpty()) {
+                        item {
+                            Text(
+                                text     = "Per Jam",
+                                fontSize = 13.sp,
+                                color    = Color.White.copy(alpha = 0.65f),
+                                modifier = Modifier.padding(
+                                    top    = 4.dp,
+                                    bottom = 2.dp
+                                )
                             )
-                        )
-                    }
-                    item {
-                        HourlyForecastRow(hourlyList = hourlyList)
+                        }
+                        item {
+                            HourlyForecastRow(hourlyList = hourlyForecast)
+                        }
                     }
 
                     // ── Forecast 7 hari ────────────────────────
-                    item {
-                        Text(
-                            text     = "7 Hari ke Depan",
-                            fontSize = 13.sp,
-                            color    = Color.White.copy(alpha = 0.65f),
-                            modifier = Modifier.padding(
-                                top    = 4.dp,
-                                bottom = 2.dp
-                            )
-                        )
-                    }
-                    itemsIndexed(dailyList) { index, day ->
-                        DailyForecastItem(
-                            daily      = day,
-                            isFirst    = index == 0,
-                            isLast     = index == dailyList.lastIndex
-                        )
-                    }
-
-                    // ── Alert cuaca (jika ada) ─────────────────
-                    val alerts = viewModel.getAlerts()
-                    if (alerts.isNotEmpty()) {
+                    if (dailyForecast.isNotEmpty()) {
                         item {
                             Text(
-                                text     = "Peringatan Cuaca",
+                                text     = "7 Hari ke Depan",
                                 fontSize = 13.sp,
-                                color    = Color(0xFFFFCC80),
-                                modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+                                color    = Color.White.copy(alpha = 0.65f),
+                                modifier = Modifier.padding(
+                                    top    = 4.dp,
+                                    bottom = 2.dp
+                                )
                             )
                         }
-                        items(alerts.size) { i ->
-                            WeatherAlertCard(alert = alerts[i])
+                        itemsIndexed(dailyForecast) { index, day ->
+                            DailyForecastItem(
+                                daily      = day,
+                                isFirst    = index == 0,
+                                isLast     = index == dailyForecast.lastIndex
+                            )
                         }
                     }
                 }
@@ -177,8 +157,8 @@ fun ForecastScreen(
 // ── Ringkasan Hari Ini ─────────────────────────────────────────
 @Composable
 private fun TodaySummaryCard(
-    current : com.weatherwise.model.CurrentWeather?,
-    today   : OneCallResponse.DailyData?
+    current : CurrentWeather,
+    today   : ForecastDaily?
 ) {
     androidx.compose.foundation.shape.RoundedCornerShape(16.dp).let { shape ->
         Card(
@@ -202,46 +182,26 @@ private fun TodaySummaryCard(
                     modifier              = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceAround
                 ) {
-                    // Suhu siang
+                    // Suhu siang (max)
                     SummaryItem(
-                        label = "Siang",
-                        value = "${today?.temp?.day?.toInt() ?: "--"}°"
+                        label = "Tertinggi",
+                        value = "${today?.tempMax?.toInt() ?: current.temperature.toInt()}°"
                     )
-                    // Suhu malam
+                    // Suhu malam (min)
                     SummaryItem(
-                        label = "Malam",
-                        value = "${today?.temp?.night?.toInt() ?: "--"}°"
+                        label = "Terendah",
+                        value = "${today?.tempMin?.toInt() ?: current.temperature.toInt()}°"
                     )
                     // Kelembaban
                     SummaryItem(
                         label = "Lembab",
-                        value = "${current?.humidity ?: "--"}%"
+                        value = "${current.humidity}%"
                     )
-                    // Probabilitas hujan
+                    // Angin
                     SummaryItem(
-                        label = "Hujan",
-                        value = "${((today?.pop ?: 0.0) * 100).toInt()}%"
+                        label = "Angin",
+                        value = "${current.windSpeed} m/s"
                     )
-                    // UV Index
-                    SummaryItem(
-                        label = "UV",
-                        value = "${today?.uvi?.toInt() ?: "--"}"
-                    )
-                }
-
-                // Ringkasan teks dari OWM (hanya tersedia di API 3.0)
-                today?.summary?.let { summary ->
-                    if (summary.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text     = summary,
-                            fontSize = 13.sp,
-                            color    = Color.White.copy(alpha = 0.8f),
-                            lineHeight = 18.sp
-                        )
-                    }
                 }
             }
         }
@@ -255,56 +215,6 @@ private fun SummaryItem(label: String, value: String) {
             color = Color.White)
         Text(label, fontSize = 11.sp,
             color = Color.White.copy(alpha = 0.6f))
-    }
-}
-
-// ── Kartu Peringatan Cuaca ─────────────────────────────────────
-@Composable
-private fun WeatherAlertCard(alert: OneCallResponse.AlertData) {
-    Card(
-        shape  = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE65100).copy(alpha = 0.85f)
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector        = Icons.Default.ArrowBackIosNew, // ganti dengan Warning
-                    contentDescription = null,
-                    tint               = Color.White,
-                    modifier           = Modifier.size(16.dp)
-                )
-                Text(
-                    text       = alert.event ?: "Peringatan Cuaca",
-                    fontSize   = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = Color.White
-                )
-            }
-            alert.description?.let { desc ->
-                if (desc.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text      = desc,
-                        fontSize  = 12.sp,
-                        color     = Color.White.copy(alpha = 0.85f),
-                        maxLines  = 3,
-                        overflow  = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text     = "Sumber: ${alert.senderName ?: "BMKG"}",
-                fontSize = 10.sp,
-                color    = Color.White.copy(alpha = 0.55f)
-            )
-        }
     }
 }
 

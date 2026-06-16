@@ -126,4 +126,9 @@ public class RetrofitClient {
     public static WeatherApiService getGeocodingService() {
         return getGeocodingClient().create(WeatherApiService.class);
     }
+
+    // ── Service accessor untuk Kotlin Coroutines ───────────────
+    public static com.weatherwise.api.WeatherApiService getWeatherServiceKotlin() {
+        return getWeatherClient().create(com.weatherwise.api.WeatherApiService.class);
+    }
 }

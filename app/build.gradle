@@ -2,6 +2,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'  // wajib untuk Compose
+    id 'com.google.devtools.ksp' version '1.9.24-1.0.20'
 }
 
 // ── Baca local.properties untuk API Key ──────────────────────
@@ -126,6 +127,14 @@ dependencies {
 
     // ── SharedPreferences (simpan preferensi kota, unit suhu) ────
     implementation 'androidx.preference:preference-ktx:1.2.1'
+
+    // Room Database
+    implementation "androidx.room:room-runtime:2.6.1"
+    implementation "androidx.room:room-ktx:2.6.1"
+    ksp "androidx.room:room-compiler:2.6.1"
+    
+    // Lifecycle Compose (for collectAsStateWithLifecycle)
+    implementation "androidx.lifecycle:lifecycle-runtime-compose:2.8.3"
 
     // ── Test ──────────────────────────────────────────────────────
     testImplementation 'junit:junit:4.13.2'
