@@ -12,13 +12,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.weatherwise.model.OneCallResponse
+import com.weatherwise.model.ForecastHourly
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun HourlyForecastRow(hourlyList: List<OneCallResponse.HourlyData>) {
+fun HourlyForecastRow(hourlyList: List<ForecastHourly>) {
     Card(
         shape  = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f))
@@ -38,7 +38,7 @@ fun HourlyForecastRow(hourlyList: List<OneCallResponse.HourlyData>) {
 }
 
 @Composable
-private fun HourlyItem(hour: OneCallResponse.HourlyData) {
+private fun HourlyItem(hour: ForecastHourly) {
     val time = Instant.ofEpochSecond(hour.dt)
         .atZone(ZoneId.systemDefault())
         .format(DateTimeFormatter.ofPattern("HH:mm"))
@@ -52,10 +52,5 @@ private fun HourlyItem(hour: OneCallResponse.HourlyData) {
         AsyncImage(model = iconUrl, contentDescription = null,
             modifier = Modifier.size(36.dp))
         Text("${hour.temp.toInt()}°", fontSize = 14.sp, color = Color.White)
-        // Probabilitas hujan jika > 10%
-        if (hour.pop > 0.1) {
-            Text("${(hour.pop * 100).toInt()}%",
-                fontSize = 11.sp, color = Color(0xFF90CAF9))
-        }
     }
 }

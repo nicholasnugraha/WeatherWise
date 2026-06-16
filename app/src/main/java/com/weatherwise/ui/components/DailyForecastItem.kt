@@ -13,8 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.weatherwise.model.OneCallResponse
-import com.weatherwise.service.WeatherParser
+import com.weatherwise.model.ForecastDaily
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -22,7 +21,7 @@ import java.util.Locale
 
 @Composable
 fun DailyForecastItem(
-    daily   : OneCallResponse.DailyData,
+    daily   : ForecastDaily,
     isFirst : Boolean = false,
     isLast  : Boolean = false,
     modifier: Modifier = Modifier
@@ -40,8 +39,7 @@ fun DailyForecastItem(
             )
     }
 
-    val iconUrl = "https://openweathermap.org/img/wn/" +
-            "${daily.getConditionIcon()}@2x.png"
+    val iconUrl = "https://openweathermap.org/img/wn/${daily.conditionIcon}@2x.png"
 
     // Radius menyesuaikan posisi di list
     val cornerTop    = if (isFirst) 16.dp else 4.dp
@@ -82,23 +80,19 @@ fun DailyForecastItem(
                 // Icon cuaca
                 AsyncImage(
                     model              = iconUrl,
-                    contentDescription = daily.getDescription(),
+                    contentDescription = daily.condition,
                     modifier           = Modifier.size(36.dp)
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Probabilitas hujan (hanya tampil jika > 10%)
-                if (daily.pop > 0.1) {
-                    Text(
-                        text     = "${(daily.pop * 100).toInt()}%",
-                        fontSize = 12.sp,
-                        color    = Color(0xFF90CAF9),
-                        modifier = Modifier.weight(0.5f)
-                    )
-                } else {
-                    Spacer(modifier = Modifier.weight(0.5f))
-                }
+                // Probabilitas hujan (tidak ada di ForecastDaily, jadi kita skip atau tampilkan kelembaban)
+                Text(
+                    text     = "${daily.humidity}%",
+                    fontSize = 12.sp,
+                    color    = Color(0xFF90CAF9),
+                    modifier = Modifier.weight(0.5f)
+                )
 
                 // Suhu min / max
                 Row(
@@ -107,7 +101,7 @@ fun DailyForecastItem(
                     verticalAlignment   = Alignment.CenterVertically
                 ) {
                     Text(
-                        text       = "${daily.temp.max.toInt()}°",
+                        text       = "${daily.tempMax.toInt()}°",
                         fontSize   = 15.sp,
                         fontWeight = FontWeight.SemiBold,
                         color      = Color.White
@@ -118,7 +112,7 @@ fun DailyForecastItem(
                         color    = Color.White.copy(alpha = 0.4f)
                     )
                     Text(
-                        text     = "${daily.temp.min.toInt()}°",
+                        text     = "${daily.tempMin.toInt()}°",
                         fontSize = 13.sp,
                         color    = Color.White.copy(alpha = 0.65f)
                     )
@@ -154,39 +148,16 @@ fun DailyForecastItem(
                             modifier            = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            DetailRow("🌅 Subuh",
-                                "${daily.temp.morn.toInt()}°")
-                            DetailRow("🌇 Sore",
-                                "${daily.temp.eve.toInt()}°")
-                            DetailRow("💧 Kelembaban",
-                                "${daily.humidity}%")
+                            DetailRow("🌡️ Tertinggi", "${daily.tempMax.toInt()}°")
+                            DetailRow("🌡️ Terendah", "${daily.tempMin.toInt()}°")
+                            DetailRow("💧 Kelembaban", "${daily.humidity}%")
                         }
                         Column(
                             modifier            = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            DetailRow("💨 Angin",
-                                "${daily.windSpeed.toInt()} m/s")
-                            DetailRow("☀️ UV Index",
-                                WeatherParser.parseUvIndex(daily.uvi).label)
-                            DetailRow("🌧 Curah hujan",
-                                if (daily.pop > 0)
-                                    "${(daily.pop * 100).toInt()}%"
-                                else "Tidak ada")
+                            DetailRow("🌧️ Kondisi", daily.condition)
                         }
-                    }
-
-                    // Deskripsi kondisi
-                    val desc = daily.getDescription()
-                    if (desc.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text     = desc.replaceFirstChar {
-                                it.uppercaseChar()
-                            },
-                            fontSize = 12.sp,
-                            color    = Color.White.copy(alpha = 0.7f)
-                        )
                     }
                 }
             }
