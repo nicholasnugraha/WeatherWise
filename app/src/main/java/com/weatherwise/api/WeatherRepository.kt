@@ -206,4 +206,18 @@ class WeatherRepository(private val context: Context) {
     fun clearError() {
         _errorMessage.value = null
     }
+
+    suspend fun fetchGeocoding(query: String): List<GeocodingResponse> {
+        return try {
+            val response = weatherService.geocodeCity(query, 5, AppConstants.API_KEY)
+            if (response.isSuccessful && response.body() != null) {
+                response.body()!!
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            Log.e("WeatherRepository", "Geocoding search failed", e)
+            emptyList()
+        }
+    }
 }

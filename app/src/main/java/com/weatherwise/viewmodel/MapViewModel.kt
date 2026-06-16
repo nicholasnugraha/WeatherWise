@@ -1,41 +1,51 @@
 package com.weatherwise.viewmodel
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.weatherwise.api.RainViewerApiService
 import com.weatherwise.api.RetrofitClient
 import com.weatherwise.model.MapFrame
 import com.weatherwise.util.WeatherTileSource
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class MapViewModel : ViewModel() {
     
-    private val _currentLayer = MutableLiveData<String>(WeatherTileSource.Layers.RADAR)
-    val currentLayer: LiveData<String> = _currentLayer
+    private val _currentLayer = MutableStateFlow(WeatherTileSource.Layers.RADAR)
+    val currentLayer: StateFlow<String> = _currentLayer.asStateFlow()
     
-    private val _host = MutableLiveData<String>("")
-    val host: LiveData<String> = _host
+    private val _host = MutableStateFlow("")
+    val host: StateFlow<String> = _host.asStateFlow()
     
-    private val _radarFrame = MutableLiveData<MapFrame?>(null)
-    val radarFrame: LiveData<MapFrame?> = _radarFrame
+    private val _radarFrames = MutableStateFlow<List<MapFrame>>(emptyList())
+    val radarFrames: StateFlow<List<MapFrame>> = _radarFrames.asStateFlow()
+    
+    private val _currentFrameIndex = MutableStateFlow(0)
+    val currentFrameIndex: StateFlow<Int> = _currentFrameIndex.asStateFlow()
+    
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
     
     // GPS Location state
-    private val _userLatitude = MutableLiveData<Double?>(null)
-    val userLatitude: LiveData<Double?> = _userLatitude
+    private val _userLatitude = MutableStateFlow<Double?>(null)
+    val userLatitude: StateFlow<Double?> = _userLatitude.asStateFlow()
     
-    private val _userLongitude = MutableLiveData<Double?>(null)
-    val userLongitude: LiveData<Double?> = _userLongitude
+    private val _userLongitude = MutableStateFlow<Double?>(null)
+    val userLongitude: StateFlow<Double?> = _userLongitude.asStateFlow()
     
-    private val _isLocating = MutableLiveData<Boolean>(false)
-    val isLocating: LiveData<Boolean> = _isLocating
+    private val _isLocating = MutableStateFlow(false)
+    val isLocating: StateFlow<Boolean> = _isLocating.asStateFlow()
     
-    private val _locationError = MutableLiveData<String?>(null)
-    val locationError: LiveData<String?> = _locationError
+    private val _locationError = MutableStateFlow<String?>(null)
+    val locationError: StateFlow<String?> = _locationError.asStateFlow()
     
     init {
         fetchRainViewerData()
+        startAnimationLoop()
     }
     
     fun requestUserLocation(latitude: Double, longitude: Double) {
@@ -64,14 +74,34 @@ class MapViewModel : ViewModel() {
                     val data = response.body()!!
                     _host.value = data.host
                     
-                    // Ambil frame radar terakhir yang tersedia
-                    val latestRadar = data.radar.past.lastOrNull()
-                    _radarFrame.value = latestRadar
+                    // Ambil beberapa frame terakhir untuk animasi (misal 5 frame)
+                    val frames = data.radar.past.takeLast(5)
+                    _radarFrames.value = frames
+                    if (frames.isNotEmpty()) {
+                        _currentFrameIndex.value = frames.size - 1
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
+    }
+    
+    private fun startAnimationLoop() {
+        viewModelScope.launch {
+            while (isActive) {
+                if (_isPlaying.value && _radarFrames.value.isNotEmpty()) {
+                    delay(1000) // 1 detik per frame
+                    _currentFrameIndex.value = (_currentFrameIndex.value + 1) % _radarFrames.value.size
+                } else {
+                    delay(500) // Polling lebih lambat saat tidak play
+                }
+            }
+        }
+    }
+    
+    fun togglePlayPause() {
+        _isPlaying.value = !_isPlaying.value
     }
     
     fun setLayer(layer: String) {
@@ -81,7 +111,7 @@ class MapViewModel : ViewModel() {
     }
     
     fun cycleLayer() {
-        val current = _currentLayer.value ?: WeatherTileSource.Layers.RADAR
+        val current = _currentLayer.value
         val nextLayer = when (current) {
             WeatherTileSource.Layers.RADAR -> WeatherTileSource.Layers.COVERAGE
             WeatherTileSource.Layers.COVERAGE -> WeatherTileSource.Layers.RADAR

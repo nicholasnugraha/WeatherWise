@@ -46,8 +46,9 @@ fun HomeScreen(
     val errorMessage   by viewModel.errorMessage.collectAsStateWithLifecycle()
 
     // ── State lokal untuk search bar ───────────────────────────
-    var searchQuery by remember { mutableStateOf("") }
-    var isSearchActive by remember { mutableStateOf(false) }
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val searchSuggestions by viewModel.searchSuggestions.collectAsStateWithLifecycle()
+    val weatherAlerts by viewModel.weatherAlerts.collectAsStateWithLifecycle()
 
     // ── Pull-to-refresh state ──────────────────────────────────
     val pullRefreshState = rememberPullToRefreshState()
@@ -80,18 +81,22 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            // ── Search Bar ─────────────────────────────────────
-            SearchBar(
-                query         = searchQuery,
-                onQueryChange = { searchQuery = it },
-                onSearch      = {
-                    if (searchQuery.isNotBlank()) {
-                        viewModel.searchByCity(searchQuery.trim())
-                        isSearchActive = false
-                    }
-                },
-                placeholder   = "Cari kota...",
-                modifier      = Modifier.fillMaxWidth()
+            // ── Alert Banner ───────────────────────────────────
+            if (weatherAlerts.isNotEmpty()) {
+                AlertBanner(
+                    alerts = weatherAlerts,
+                    onDismiss = { /* TODO: Implement dismiss logic if needed */ }
+                )
+            }
+
+            // ── Search Bar with Autocomplete ───────────────────
+            SearchBarWithDropdown(
+                query             = searchQuery,
+                onQueryChange     = { viewModel.updateSearchQuery(it) },
+                onSearch          = { viewModel.searchByCity(it) },
+                suggestions       = searchSuggestions,
+                onSuggestionClick = { viewModel.selectSuggestion(it) },
+                modifier          = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(24.dp))

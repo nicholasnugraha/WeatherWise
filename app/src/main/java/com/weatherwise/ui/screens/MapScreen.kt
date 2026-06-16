@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,13 +37,15 @@ fun MapScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val currentLayer by viewModel.currentLayer.observeAsState(WeatherTileSource.Layers.RADAR)
-    val host by viewModel.host.observeAsState("")
-    val radarFrame by viewModel.radarFrame.observeAsState(null)
-    val userLatitude by viewModel.userLatitude.observeAsState(null)
-    val userLongitude by viewModel.userLongitude.observeAsState(null)
-    val isLocating by viewModel.isLocating.observeAsState(false)
-    val locationError by viewModel.locationError.observeAsState(null)
+    val currentLayer by viewModel.currentLayer.collectAsStateWithLifecycle()
+    val host by viewModel.host.collectAsStateWithLifecycle()
+    val radarFrames by viewModel.radarFrames.collectAsStateWithLifecycle()
+    val currentFrameIndex by viewModel.currentFrameIndex.collectAsStateWithLifecycle()
+    val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
+    val userLatitude by viewModel.userLatitude.collectAsStateWithLifecycle()
+    val userLongitude by viewModel.userLongitude.collectAsStateWithLifecycle()
+    val isLocating by viewModel.isLocating.collectAsStateWithLifecycle()
+    val locationError by viewModel.locationError.collectAsStateWithLifecycle()
     
     // Permission state using Accompanist
     val locationPermissionState = rememberPermissionState(
@@ -138,6 +142,20 @@ fun MapScreen(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Play/Pause Animation Button
+                if (radarFrames.size > 1) {
+                    FloatingActionButton(
+                        onClick = { viewModel.togglePlayPause() },
+                        containerColor = if (isPlaying) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = if (isPlaying) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            contentDescription = if (isPlaying) "Pause Animation" else "Play Animation"
+                        )
+                    }
+                }
+
                 // GPS Location Button
                 GPSButton(
                     isLocating = isLocating,
@@ -184,16 +202,19 @@ fun MapScreen(
                 },
                 update = { mapView ->
                     // Only update if we have host data from RainViewer
-                    if (host.isNotBlank()) {
+                    if (host.isNotBlank() && radarFrames.isNotEmpty()) {
                         // Remove existing weather overlays
                         val overlaysToRemove = mapView.overlays.filterIsInstance<TilesOverlay>()
                         mapView.overlays.removeAll(overlaysToRemove)
 
+                        // Get current frame for animation
+                        val currentFrame = radarFrames.getOrNull(currentFrameIndex)
+                        
                         // Create appropriate tile source based on current layer
                         val weatherTileSource = when (currentLayer) {
                             WeatherTileSource.Layers.RADAR -> {
-                                if (radarFrame != null) {
-                                    WeatherTileSource.createRadarTileSource(host, radarFrame!!.path)
+                                if (currentFrame != null) {
+                                    WeatherTileSource.createRadarTileSource(host, currentFrame.path)
                                 } else null
                             }
                             WeatherTileSource.Layers.COVERAGE -> {
