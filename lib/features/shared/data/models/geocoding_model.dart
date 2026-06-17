@@ -21,7 +21,7 @@ class GeocodingModel with _$GeocodingModel {
 extension GeocodingModelExtension on GeocodingModel {
   String get displayName => localNames?['id'] ?? name;
   String get fullDisplayName {
-    final stateStr = state != null ? ', \$state' : '';
-    return '\$displayName\$stateStr, \$country';
+    final stateStr = state != null ? ', $state' : '';
+    return '$displayName$stateStr, $country';
   }
 }
