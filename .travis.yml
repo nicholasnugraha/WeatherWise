@@ -1,0 +1,49 @@
+language: android
+jdk: openjdk17
+
+android:
+  components:
+    - tools
+    - platform-tools
+    - build-tools-35.0.0
+    - android-35
+    - extra-android-m2repository
+
+before_script:
+  # Berikan izin eksekusi pada gradlew
+  - chmod +x gradlew
+
+script:
+  # 1. Build Debug APK
+  - ./gradlew assembleDebug --no-daemon
+  # 2. Build Release APK (untuk memvalidasi aturan ProGuard/R8)
+  - ./gradlew assembleRelease --no-daemon
+
+# ==============================================================================
+# OPSI 1: UPLOAD KE TRAVIS CI ARTIFACTS (Direkomendasikan untuk kemudahan)
+# ==============================================================================
+# Untuk mengaktifkan ini, Anda HARUS mengaktifkan fitur "Artifact Upload" 
+# di pengaturan repository Travis CI Anda.
+artifacts:
+  paths:
+    - app/build/outputs/apk/debug/app-debug.apk
+    - app/build/outputs/apk/release/app-release-unsigned.apk
+  working_dir: $TRAVIS_BUILD_DIR
+
+# ==============================================================================
+# OPSI 2: UPLOAD KE GITHUB RELEASES
+# ==============================================================================
+# Jika Anda lebih suka APK langsung masuk ke tab "Releases" di GitHub, 
+# hapus komentar (uncomment) pada blok `deploy` di bawah ini, 
+# dan HAPUS atau beri komentar pada blok `artifacts` di atas.
+#
+# deploy:
+#   provider: releases
+#   token: $GITHUB_TOKEN  # Harus ditambahkan sebagai Environment Variable di Travis CI
+#   file:
+#     - app/build/outputs/apk/debug/app-debug.apk
+#     - app/build/outputs/apk/release/app-release-unsigned.apk
+#   skip_cleanup: true
+#   on:
+#     tags: true          # Hanya upload ke Release saat ada push tag (misal: v1.0.0)
+#     # all_branches: true # Atau gunakan ini jika ingin upload di setiap push ke branch manapun
