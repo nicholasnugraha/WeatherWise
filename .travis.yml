@@ -19,16 +19,24 @@ script:
   # 2. Build Release APK (untuk memvalidasi aturan ProGuard/R8)
   - ./gradlew assembleRelease --no-daemon
 
+after_script:
+  # Debug: Tampilkan file APK yang dihasilkan untuk memastikan path-nya benar
+  - echo "=== Debug APK ==="
+  - ls -la app/build/outputs/apk/debug/ || true
+  - echo "=== Release APK ==="
+  - ls -la app/build/outputs/apk/release/ || true
+
 # ==============================================================================
 # OPSI 1: UPLOAD KE TRAVIS CI ARTIFACTS (Direkomendasikan untuk kemudahan)
 # ==============================================================================
-# Untuk mengaktifkan ini, Anda HARUS mengaktifkan fitur "Artifact Upload" 
-# di pengaturan repository Travis CI Anda.
-artifacts:
-  paths:
-    - app/build/outputs/apk/debug/app-debug.apk
-    - app/build/outputs/apk/release/app-release-unsigned.apk
-  working_dir: $TRAVIS_BUILD_DIR
+# PENTING: Anda HARUS mengaktifkan fitur "Artifact Upload" di pengaturan 
+# repository Travis CI Anda (Settings -> Artifact Upload), jika tidak, 
+# Travis akan mengabaikan blok ini dan tidak mengunggah apa pun.
+addons:
+  artifacts:
+    paths:
+      - app/build/outputs/apk/debug/app-debug.apk
+      - app/build/outputs/apk/release/app-release-unsigned.apk
 
 # ==============================================================================
 # OPSI 2: UPLOAD KE GITHUB RELEASES
