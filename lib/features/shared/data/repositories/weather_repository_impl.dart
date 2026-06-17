@@ -18,7 +18,20 @@ class WeatherRepositoryImpl implements WeatherRepository {
     required WeatherApiService apiService,
     required Box<CachedWeatherEntity> cacheBox,
   })  : _apiService = apiService,
-        _cacheBox = cacheBox;
+        _cacheBox = cacheBox {
+    _assertApiKeyConfigured();
+  }
+
+  /// Fail fast with a helpful error if WEATHER_API_KEY was not injected
+  /// at build time. Otherwise the user gets a cryptic 401 from the server.
+  void _assertApiKeyConfigured() {
+    if (!ApiConfig.isApiKeyConfigured) {
+      throw Exception(
+        'API key belum dikonfigurasi. Build ulang dengan: '
+        'flutter run --dart-define=WEATHER_API_KEY=<kunci_api_kamu>',
+      );
+    }
+  }
 
   @override
   Future<CurrentWeather> getCurrentWeatherByCity(String cityName) async {
