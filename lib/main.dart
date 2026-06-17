@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/hive_config.dart';
+import 'features/home/presentation/screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,20 +18,17 @@ class WeatherWiseApp extends StatelessWidget {
       title: 'WeatherWise',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorSchemeSeed: Colors.blue,
+        colorSchemeSeed: const Color(0xFF2196F3),
         useMaterial3: true,
         brightness: Brightness.light,
       ),
       darkTheme: ThemeData(
-        colorSchemeSeed: Colors.blue,
+        colorSchemeSeed: const Color(0xFF2196F3),
         useMaterial3: true,
         brightness: Brightness.dark,
       ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('WeatherWise Flutter 🌤️\nPhase 1 Complete!'),
-        ),
-      ),
+      themeMode: ThemeMode.system,
+      home: const HomeScreen(),
     );
   }
 }
