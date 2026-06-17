@@ -27,31 +27,16 @@ after_script:
   - ls -la app/build/outputs/apk/release/ || true
 
 # ==============================================================================
-# OPSI 1: UPLOAD KE TRAVIS CI ARTIFACTS (Direkomendasikan untuk kemudahan)
+# UPLOAD KE GITHUB RELEASES
 # ==============================================================================
-# PENTING: Anda HARUS mengaktifkan fitur "Artifact Upload" di pengaturan 
-# repository Travis CI Anda (Settings -> Artifact Upload), jika tidak, 
-# Travis akan mengabaikan blok ini dan tidak mengunggah apa pun.
-addons:
-  artifacts:
-    paths:
-      - app/build/outputs/apk/debug/app-debug.apk
-      - app/build/outputs/apk/release/app-release-unsigned.apk
-
-# ==============================================================================
-# OPSI 2: UPLOAD KE GITHUB RELEASES
-# ==============================================================================
-# Jika Anda lebih suka APK langsung masuk ke tab "Releases" di GitHub, 
-# hapus komentar (uncomment) pada blok `deploy` di bawah ini, 
-# dan HAPUS atau beri komentar pada blok `artifacts` di atas.
-#
-# deploy:
-#   provider: releases
-#   token: $GITHUB_TOKEN  # Harus ditambahkan sebagai Environment Variable di Travis CI
-#   file:
-#     - app/build/outputs/apk/debug/app-debug.apk
-#     - app/build/outputs/apk/release/app-release-unsigned.apk
-#   skip_cleanup: true
-#   on:
-#     tags: true          # Hanya upload ke Release saat ada push tag (misal: v1.0.0)
-#     # all_branches: true # Atau gunakan ini jika ingin upload di setiap push ke branch manapun
+# Membutuhkan Environment Variable 'GITHUB_TOKEN' di pengaturan Travis CI
+# dengan izin 'Contents: Read and write' pada Fine-Grained PAT.
+deploy:
+  provider: releases
+  token: $GITHUB_TOKEN
+  file:
+    - app/build/outputs/apk/debug/app-debug.apk
+    - app/build/outputs/apk/release/app-release-unsigned.apk
+  skip_cleanup: true
+  on:
+    branch: android-stable
