@@ -24,7 +24,7 @@ before_install:
   - flutter doctor
 
 install:
-  - flutter pub get
+  - travis_wait 30 flutter pub get
   # Safety net: patch any plugin that still references flutter.compileSdkVersion
   # in case dependency_overrides didn't catch it. Injects compileSdk via sed.
   - |
@@ -34,12 +34,12 @@ install:
         sed -i 's/compileSdk flutter\.compileSdkVersion/compileSdk 34/g; s/minSdkVersion flutter\.minSdkVersion/minSdkVersion 21/g' "$gradle"
       fi
     done
-  - dart run build_runner build --delete-conflicting-outputs
+  - travis_wait 30 dart run build_runner build --delete-conflicting-outputs
 
 script:
   # analyze with non-fatal flags (warnings don't fail the build)
   - flutter analyze --no-fatal-infos --no-fatal-warnings || echo "analyze warnings ignored"
-  - flutter build apk --release --dart-define=WEATHER_API_KEY=$WEATHER_API_KEY
+  - travis_wait 30 flutter build apk --release --dart-define=WEATHER_API_KEY=$WEATH...EY
 
 deploy:
   provider: releases
