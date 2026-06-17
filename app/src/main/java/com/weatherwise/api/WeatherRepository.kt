@@ -53,7 +53,7 @@ class WeatherRepository(private val context: Context) {
                 val geo = geoResponse.body()!![0]
                 lastLat = geo.lat
                 lastLon = geo.lon
-                _currentCityName.value = geo.getDisplayName()
+                _currentCityName.value = geo.displayName
                 fetchWeatherByCoord(geo.lat, geo.lon)
             } else {
                 _isLoading.value = false

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -78,7 +79,7 @@ fun AlertBanner(
                 }
                 IconButton(onClick = onDismiss) {
                     Icon(
-                        imageVector = Icons.Default.Close,
+                        imageVector = Icons.Filled.Close,
                         contentDescription = "Dismiss",
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)

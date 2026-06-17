@@ -1,6 +1,7 @@
 package com.weatherwise.util
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -23,7 +24,7 @@ fun Modifier.hapticClick(
     val indication = LocalIndication.current
 
     this.then(
-        androidx.compose.foundation.clickable(
+        Modifier.clickable(
             interactionSource = interactionSource,
             indication = indication,
             onClick = {

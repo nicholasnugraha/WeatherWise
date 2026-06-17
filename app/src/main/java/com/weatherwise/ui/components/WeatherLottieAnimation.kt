@@ -1,11 +1,8 @@
 package com.weatherwise.ui.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -43,16 +40,7 @@ fun WeatherLottieAnimation(
             "https://assets10.lottiefiles.com/packages/lf20_3j7q5a.json" // Fallback: Awan
     }
 
-    var composition by remember { mutableStateOf<com.airbnb.lottie.LottieComposition?>(null) }
-
-    LaunchedEffect(lottieUrl) {
-        // Load komposisi dari URL (untuk produksi, gunakan LottieCompositionSpec.RawRes)
-        val result = com.airbnb.lottie.compose.LottieCompositionFactory.fromUrl(
-            androidx.compose.ui.platform.LocalContext.current,
-            lottieUrl
-        )
-        composition = result.value
-    }
+    val composition by rememberLottieComposition(LottieCompositionSpec.Url(lottieUrl))
 
     val progress by animateLottieCompositionAsState(
         composition = composition,
