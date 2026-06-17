@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/domain/entities/forecast.dart';
 import '../providers/forecast_view_model.dart';
 import '../widgets/hourly_forecast.dart';
 import '../widgets/daily_forecast.dart';
@@ -80,8 +79,10 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            HourlyForecast(entries: state.forecast!.entries),
-            const SizedBox(height: 16),
+            if (state.hourly != null) ...[
+              HourlyForecast(entries: state.hourly!.entries),
+              const SizedBox(height: 16),
+            ],
             DailyForecast(entries: state.forecast!.entries),
           ],
         );

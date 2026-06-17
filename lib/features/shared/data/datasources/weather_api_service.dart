@@ -1,71 +1,43 @@
 import 'package:dio/dio.dart';
-import '../models/current_weather_model.dart';
-import '../models/forecast_model.dart';
 import '../models/geocoding_model.dart';
+import '../models/onecall_model.dart';
 
 class WeatherApiService {
   final Dio _dio;
 
   WeatherApiService(this._dio);
 
-  Future<CurrentWeatherModel> getCurrentWeatherByCity({
-    required String cityName,
-    required String apiKey,
-    String units = 'metric',
-    String lang = 'id',
-  }) async {
-    final response = await _dio.get(
-      '/data/2.5/weather',
-      queryParameters: {
-        'q': cityName,
-        'appid': apiKey,
-        'units': units,
-        'lang': lang,
-      },
-    );
-    return CurrentWeatherModel.fromJson(response.data);
-  }
-
-  Future<CurrentWeatherModel> getCurrentWeatherByCoord({
+  /// Get complete weather data (current + hourly + daily) in one call.
+  /// Endpoint: /data/3.0/onecall
+  /// Docs: https://openweathermap.org/api/one-call-3
+  ///
+  /// [exclude] is a comma-separated list of parts to exclude from the response
+  /// to save bandwidth. Example: 'minutely,alerts'.
+  Future<OneCallResponse> getOneCall({
     required double latitude,
     required double longitude,
     required String apiKey,
     String units = 'metric',
     String lang = 'id',
+    String exclude = 'minutely,alerts',
   }) async {
     final response = await _dio.get(
-      '/data/2.5/weather',
+      '/data/3.0/onecall',
       queryParameters: {
         'lat': latitude,
         'lon': longitude,
         'appid': apiKey,
         'units': units,
         'lang': lang,
+        'exclude': exclude,
       },
     );
-    return CurrentWeatherModel.fromJson(response.data);
+    return OneCallResponse.fromJson(response.data);
   }
 
-  Future<ForecastResponse> getForecast({
-    required double latitude,
-    required double longitude,
-    required String apiKey,
-    String units = 'metric',
-    String lang = 'id',
-  }) async {
-    final response = await _dio.get(
-      '/data/2.5/forecast',
-      queryParameters: {
-        'lat': latitude,
-        'lon': longitude,
-        'appid': apiKey,
-        'units': units,
-        'lang': lang,
-      },
-    );
-    return ForecastResponse.fromJson(response.data);
-  }
-
+  /// Search city by name (forward geocoding).
+  /// Endpoint: /geo/1.0/direct
+  /// (One Call does not provide city search by name.)
   Future<List<GeocodingModel>> geocodeCity({
     required String cityName,
     int limit = 5,
@@ -84,6 +56,8 @@ class WeatherApiService {
         .toList();
   }
 
+  /// Reverse geocoding: coordinates -> city name.
+  /// Endpoint: /geo/1.0/reverse
   Future<List<GeocodingModel>> reverseGeocode({
     required double latitude,
     required double longitude,
