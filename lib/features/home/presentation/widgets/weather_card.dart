@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../shared/domain/entities/current_weather.dart';
+import '../../../forecast/presentation/screens/forecast_screen.dart';
 import 'weather_icon_helper.dart';
 
 class WeatherCard extends StatelessWidget {
@@ -15,66 +16,89 @@ class WeatherCard extends StatelessWidget {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  WeatherIconHelper.getWeatherIcon(weather.weatherMain, isDay: isDay),
-                  size: 80,
-                  color: WeatherIconHelper.getWeatherColor(weather.weatherMain),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${weather.temp.round()}°C',
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => _navigateToForecast(context),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    WeatherIconHelper.getWeatherIcon(weather.weatherMain, isDay: isDay),
+                    size: 80,
+                    color: WeatherIconHelper.getWeatherColor(weather.weatherMain),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${weather.temp.round()}°C',
+                        style: theme.textTheme.displayMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'Terasa ${weather.feelsLike.round()}°C',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      Text(
+                        'Terasa ${weather.feelsLike.round()}°C',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              weather.weatherDescription,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w500,
+                    ],
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _MinMaxTemp(
-                  icon: Icons.arrow_upward,
-                  label: 'Max',
-                  temp: weather.tempMax,
-                  color: Colors.red,
+              const SizedBox(height: 16),
+              Text(
+                weather.weatherDescription,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(width: 24),
-                _MinMaxTemp(
-                  icon: Icons.arrow_downward,
-                  label: 'Min',
-                  temp: weather.tempMin,
-                  color: Colors.blue,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _MinMaxTemp(
+                    icon: Icons.arrow_upward,
+                    label: 'Max',
+                    temp: weather.tempMax,
+                    color: Colors.red,
+                  ),
+                  const SizedBox(width: 24),
+                  _MinMaxTemp(
+                    icon: Icons.arrow_downward,
+                    label: 'Min',
+                    temp: weather.tempMin,
+                    color: Colors.blue,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Tap untuk lihat prakiraan →',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.primary,
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToForecast(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ForecastScreen(
+          lat: weather.lat,
+          lon: weather.lon,
         ),
       ),
     );
