@@ -113,6 +113,7 @@ dependencies {
     implementation 'io.coil-kt:coil-compose:2.6.0'
 
     // ── Lottie (Animasi Cuaca Dinamis) ───────────────────────────
+    implementation 'com.airbnb.android:lottie:6.4.0'
     implementation 'com.airbnb.android:lottie-compose:6.4.0'
 
     // ── org.json sudah built-in di Android SDK ───────────────────

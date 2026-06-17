@@ -79,7 +79,7 @@ fun AlertBanner(
                 }
                 IconButton(onClick = onDismiss) {
                     Icon(
-                        imageVector = Icons.Filled.Close,
+                        imageVector = Icons.Default.Close,
                         contentDescription = "Dismiss",
                         tint = Color.White,
                         modifier = Modifier.size(20.dp)

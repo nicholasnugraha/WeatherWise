@@ -24,7 +24,7 @@ fun Modifier.hapticClick(
     val indication = LocalIndication.current
 
     this.then(
-        Modifier.clickable(
+        this.clickable(
             interactionSource = interactionSource,
             indication = indication,
             onClick = {

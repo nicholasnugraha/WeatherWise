@@ -65,8 +65,12 @@ data class GeocodingResponse(
     @SerializedName("lat") val lat: Double,
     @SerializedName("lon") val lon: Double,
     @SerializedName("country") val country: String,
-    @SerializedName("state") val state: String? = null
-)
+    @SerializedName("state") val state: String? = null,
+    @SerializedName("local_names") val localNames: Map<String, String>? = null
+) {
+    val displayName: String
+        get() = localNames?.get("id") ?: name
+}
 
 // Weather Alert Model
 data class WeatherAlert(
