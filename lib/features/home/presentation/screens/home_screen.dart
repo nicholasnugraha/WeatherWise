@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../map/presentation/screens/map_screen.dart';
 import '../providers/home_view_model.dart';
 import '../widgets/weather_card.dart';
 import '../widgets/weather_details.dart';
@@ -30,8 +31,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: const Text('WeatherWise'),
         actions: [
+          if (state.weather != null)
+            IconButton(
+              icon: const Icon(Icons.map_outlined),
+              tooltip: 'Peta Radar',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => MapScreen(
+                    lat: state.weather!.lat,
+                    lon: state.weather!.lon,
+                  ),
+                ),
+              ),
+            ),
           LocationButton(
-            onPressed: () => ref.read(homeViewModelProvider.notifier).loadWeatherByLocation(),
+            onPressed: () =>
+                ref.read(homeViewModelProvider.notifier).loadWeatherByLocation(),
           ),
         ],
       ),
@@ -68,7 +84,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => ref.read(homeViewModelProvider.notifier).refresh(),
+                      onPressed: () =>
+                          ref.read(homeViewModelProvider.notifier).refresh(),
                       child: const Text('Coba Lagi'),
                     ),
                   ],
@@ -85,7 +102,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             WeatherSearchBar(
-              onSearch: (city) => ref.read(homeViewModelProvider.notifier).loadWeatherByCity(city),
+              onSearch: (city) =>
+                  ref.read(homeViewModelProvider.notifier).loadWeatherByCity(city),
             ),
             const SizedBox(height: 16),
             if (state.location != null) ...[
@@ -113,7 +131,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const Text('Selamat datang di WeatherWise!'),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () => ref.read(homeViewModelProvider.notifier).loadWeatherByLocation(),
+                    onPressed: () => ref
+                        .read(homeViewModelProvider.notifier)
+                        .loadWeatherByLocation(),
                     icon: const Icon(Icons.my_location),
                     label: const Text('Gunakan Lokasi Saya'),
                   ),
