@@ -25,6 +25,15 @@ before_install:
 
 install:
   - flutter pub get
+  # Safety net: patch any plugin that still references flutter.compileSdkVersion
+  # in case dependency_overrides didn't catch it. Injects compileSdk via sed.
+  - |
+    for gradle in $(find $HOME/.pub-cache/hosted/pub.dev -path "*/android/build.gradle" 2>/dev/null); do
+      if grep -q "flutter\.compileSdkVersion" "$gradle" 2>/dev/null; then
+        echo "Patching $gradle"
+        sed -i 's/compileSdk flutter\.compileSdkVersion/compileSdk 34/g; s/minSdkVersion flutter\.minSdkVersion/minSdkVersion 21/g' "$gradle"
+      fi
+    done
   - dart run build_runner build --delete-conflicting-outputs
 
 script:
