@@ -1,0 +1,50 @@
+language: android
+dist: jammy
+jdk: openjdk17
+
+env:
+  global:
+    - ANDROID_API_LEVEL=34
+    - ANDROID_BUILD_TOOLS_VERSION=34.0.0
+    - FLUTTER_VERSION=3.24.0-stable
+
+android:
+  components:
+    - tools
+    - platform-tools
+    - build-tools-$ANDROID_BUILD_TOOLS_VERSION
+    - android-$ANDROID_API_LEVEL
+    - extra-google-m2repository
+    - extra-android-m2repository
+
+before_install:
+  - git clone https://github.com/flutter/flutter.git -b stable --depth 1 $HOME/flutter
+  - export PATH="$HOME/flutter/bin:$PATH"
+  - flutter precache
+  - flutter doctor
+
+install:
+  - flutter pub get
+
+script:
+  - flutter analyze
+  - flutter build apk --release --dart-define=WEATHER_API_KEY=$WEATHER_API_KEY
+
+deploy:
+  provider: releases
+  token: $GITHUB_TOKEN
+  file:
+    - build/app/outputs/flutter-apk/app-release.apk
+  skip_cleanup: true
+  name: "WeatherWise Flutter Build $TRAVIS_BUILD_NUMBER"
+  body: "Automated build from branch $TRAVIS_BRANCH (commit $TRAVIS_COMMIT)"
+  tag_name: "flutter-build-$TRAVIS_BUILD_NUMBER"
+  target_commitish: "$TRAVIS_COMMIT"
+  prerelease: true
+  overwrite: true
+  on:
+    branch: flutter
+
+after_script:
+  - echo "Build completed at $(date)"
+  - ls -la build/app/outputs/flutter-apk/

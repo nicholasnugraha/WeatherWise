@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/hive_config.dart';
+import 'core/theme/app_theme.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 
 void main() async {
@@ -17,16 +18,8 @@ class WeatherWiseApp extends StatelessWidget {
     return MaterialApp(
       title: 'WeatherWise',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF2196F3),
-        useMaterial3: true,
-        brightness: Brightness.light,
-      ),
-      darkTheme: ThemeData(
-        colorSchemeSeed: const Color(0xFF2196F3),
-        useMaterial3: true,
-        brightness: Brightness.dark,
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
       home: const HomeScreen(),
     );
