@@ -45,4 +45,11 @@ app.*.map.json
 **/*.g.dart
 
 # Environment
+# Ignore .env in project root (typical secret) but keep assets/.env
+# trackable for the shipped APK. The .env in assets/ is added with
+# `git add -f assets/.env` from the flutter branch.
 .env
+!assets/.env
+
+# Track assets/.env so the shipped APK can read the API key without
+# setting Travis env vars. assets/.env is force-added via `git add -f`.

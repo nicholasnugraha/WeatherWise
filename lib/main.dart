@@ -8,7 +8,7 @@ import 'features/home/presentation/screens/home_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Load .env file bundled in the APK before any service that depends on it.
-  await dotenv.load(fileName: '.env');
+  await dotenv.load(fileName: 'assets/.env');
   await HiveConfig.init();
   runApp(const ProviderScope(child: WeatherWiseApp()));
 }
