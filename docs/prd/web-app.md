@@ -22,7 +22,7 @@ Web app ini **bukan** produk komersial atau publik. Ia adalah alat personal yang
 ## 2. Latar Belakang & Masalah
 
 ### 2.1 Konteks
-- Cuaca di tempat tinggal user **tidak bisa diprediksi** — akses频繁 ke weather info adalah kebutuhan harian
+- Cuaca di tempat tinggal user **tidak bisa diprediksi** — akses sering ke weather info adalah kebutuhan harian
 - User sudah punya WeatherWise Android di branch `flutter` (Flutter 3.24.4 + Riverpod + Clean Architecture)
 - User tidak punya budget untuk Apple Developer Account ($99/year) atau device iOS untuk testing
 - APK Android saat ini **~70MB** (bisa dioptimasi ke ~20MB dengan ABI split + R8)
