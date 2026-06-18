@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/hive_config.dart';
 import 'core/theme/app_theme.dart';
 import 'features/home/presentation/screens/home_screen.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Load .env file bundled in the APK before any service that depends on it.
+  await dotenv.load(fileName: '.env');
   await HiveConfig.init();
   runApp(const ProviderScope(child: WeatherWiseApp()));
 }
