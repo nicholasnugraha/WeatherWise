@@ -25,5 +25,19 @@ class CurrentWeather with _$CurrentWeather {
     required int sunset,
     required int timezone,
     required int timestamp,
+
+    /// UV index (from OpenWeather One Call `current.uvi`).
+    required double uvi,
+
+    /// Visibility in meters (from One Call `current.visibility`, max 10000).
+    required int visibility,
+
+    /// Dew point in Kelvin (from One Call `current.dew_point`).
+    /// Null if not returned by the API.
+    double? dewPoint,
+
+    /// Total precipitation (rain) in mm over the past 24h, derived from
+    /// `daily[0].rain`. Null if the API did not return a rain total.
+    @Default(null) double? precipitationMm,
   }) = _CurrentWeather;
 }

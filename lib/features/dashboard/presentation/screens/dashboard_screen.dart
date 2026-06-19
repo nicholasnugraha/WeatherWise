@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../home/presentation/providers/home_view_model.dart';
+import '../utils/metric_formatters.dart';
 import '../widgets/dashboard_hero_card.dart';
 import '../widgets/dashboard_search_bar.dart';
+import '../widgets/metric_grid.dart';
 
 /// Dashboard screen — main landing route `/`.
 ///
@@ -89,9 +91,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ref.read(homeViewModelProvider.notifier).loadWeatherByCity(_defaultCity),
         );
       case HomeStatus.success:
-        return DashboardHeroCard(
-          weather: state.weather!,
-          location: state.location,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DashboardHeroCard(
+              weather: state.weather!,
+              location: state.location,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            MetricGrid(metrics: buildMetricData(state.weather!)),
+          ],
         );
     }
   }

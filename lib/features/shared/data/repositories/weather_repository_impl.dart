@@ -243,6 +243,13 @@ class WeatherRepositoryImpl implements WeatherRepository {
       sunset: current.sunset,
       timezone: response.timezoneOffset,
       timestamp: current.dt,
+      uvi: current.uvi,
+      visibility: current.visibility,
+      dewPoint: current.dewPoint,
+      // daily[0].rain is rain total for today (past 24h in local TZ).
+      precipitationMm: (response.daily != null && response.daily!.isNotEmpty)
+          ? response.daily!.first.rain
+          : null,
     );
   }
 
