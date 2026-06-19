@@ -104,3 +104,57 @@ Untuk sekarang tidak ada env var yang dibutuhkan. Web app baca `WEATHER_API_KEY`
 - `main` / `master` = production deploy (setelah merge)
 
 Untuk sekarang, branch `flutter` (Android) dan `web-app` (web) terpisah. Nanti bisa di-merge via PR.
+
+---
+
+## Fallback: Build Lokal + Deploy Manual (Recommended)
+
+Kalau build Vercel terus gagal karena sandbox limitation (root check, missing tools, dll), pakai fallback ini — **100% reliable** karena kamu kontrol environment-nya:
+
+### Sekali Setup
+
+```bash
+# Install Flutter (kalau belum ada)
+# https://docs.flutter.dev/get-started/install
+
+# Install Vercel CLI
+npm install -g vercel
+
+# Login
+vercel login
+```
+
+### Setiap Kali Deploy
+
+```bash
+cd /path/to/weatherwise_flutter
+
+# 1. Pastikan generated files up-to-date
+dart run build_runner build --delete-conflicting-outputs
+
+# 2. Build web app (locally, no sandbox restrictions)
+flutter build web --wasm --release
+
+# 3. Deploy build/web/ ke Vercel (skip build step — pakai artifact lokal)
+npx vercel deploy --prebuilt --prod
+```
+
+`--prebuilt` artinya Vercel **skip buildCommand** dan langsung deploy isi folder `build/web/`. Tidak ada sandbox issues karena build sudah dilakukan lokal dengan Flutter native.
+
+### Alternatif: Drag & Drop ke Vercel Dashboard
+
+1. Buka https://vercel.com/dashboard → pilih project
+2. Settings → Build & Development Settings → **Override** "Build Command" jadi kosong
+3. Settings → Output Directory → `build/web`
+4. Klik **Deploy** → drag & drop folder `build/web/`
+
+### Trade-off Fallback
+
+| | Vercel Auto-Build | Local Build + Manual Deploy |
+|---|---|---|
+| **Reliability** | ⚠️ Tergantung sandbox | ✅ 100% (kamu kontrol) |
+| **Convenience** | ✅ Auto tiap push | ⚠️ Manual tiap deploy |
+| **CI/CD** | ✅ Built-in | ❌ Perlu setup tambahan (opsional) |
+| **Build time** | ⏱️ 3-4 menit di cloud | ⏱️ 1-2 menit lokal |
+
+Untuk personal project (branch `web-app`, deploy manual), **local build + manual deploy adalah pilihan paling pragmatis**. Auto-build di Vercel baru worth it kalau deploy sering (tiap PR, atau release flow).
