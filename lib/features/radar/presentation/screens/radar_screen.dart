@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 
-/// Placeholder forecast screen for Milestone 1 (Foundation).
+/// Placeholder radar screen for Milestone 1 (Foundation).
 ///
-/// Milestone 2 will replace this with the 7-day forecast cards grid per
-/// Stitch `prakiraan_cuaca_detail`.
-class ForecastScreen extends StatelessWidget {
-  const ForecastScreen({super.key});
+/// Milestone 2 will replace this with the flutter_map + RainViewer overlay,
+/// legend panel, zoom controls, and timeline slider per Stitch
+/// `peta_radar_hujan_fixed_layout`.
+class RadarScreen extends StatelessWidget {
+  const RadarScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      appBar: AppBar(title: const Text('Prakiraan')),
+      appBar: AppBar(title: const Text('Peta Radar')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -23,15 +24,15 @@ class ForecastScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.cloud, size: 64, color: scheme.primaryContainer),
+                  Icon(Icons.map, size: 64, color: scheme.primaryContainer),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'Prakiraan 7 Hari',
+                    'Peta Radar Hujan',
                     style: Theme.of(context).textTheme.headlineLarge,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Forecast cards dengan 2x2 metric grid akan diisi di Milestone 2.',
+                    'Map + RainViewer overlay + timeline akan diisi di Milestone 2.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: scheme.onSurfaceVariant,
