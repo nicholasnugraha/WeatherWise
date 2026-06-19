@@ -26,5 +26,12 @@ class ForecastEntry with _$ForecastEntry {
     required String weatherDescription,
     required String weatherIcon,
     required double rainProbability,
+
+    /// UV index for this day (from One Call `daily.uvi`).
+    required double uvi,
+
+    /// Total precipitation in mm for this day (from One Call `daily.rain`).
+    /// Null if no rain recorded or API did not return a value.
+    @Default(null) double? precipitationMm,
   }) = _ForecastEntry;
 }

@@ -274,6 +274,8 @@ class WeatherRepositoryImpl implements WeatherRepository {
         weatherDescription: w.description,
         weatherIcon: w.icon,
         rainProbability: (d.pop ?? 0) * 100,
+        uvi: d.uvi,
+        precipitationMm: d.rain,
       );
     }).toList();
 
@@ -305,6 +307,7 @@ class WeatherRepositoryImpl implements WeatherRepository {
         weatherDescription: w.description,
         weatherIcon: w.icon,
         rainProbability: (h.pop ?? 0) * 100,
+        uvi: h.uvi,
       );
     }).toList();
 
