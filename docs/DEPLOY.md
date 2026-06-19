@@ -8,7 +8,39 @@ Dokumen ini menjelaskan cara deploy branch `web-app` ke Vercel.
 - Akses ke repo `github.com/nicholasnugraha/WeatherWise`
 - (Opsional) Vercel CLI untuk deploy manual
 
-## Cara 1 — Vercel GitHub Integration (Recommended, Auto-Deploy)
+## ⚡ Quick Deploy (Recommended) — Local Build + Vercel Prebuilt
+
+**100% reliable.** Build di lokal (no sandbox drama), deploy ke Vercel.
+
+### One-time Setup
+
+```bash
+# Install Vercel CLI (kalau belum)
+npm install -g vercel
+
+# Login (buka browser)
+vercel login
+
+# Link project (pertama kali aja)
+cd /tmp/weatherwise_flutter
+vercel link
+```
+
+### Deploy (Setiap Kali)
+
+```bash
+# 1. Build web app lokal
+flutter build web --wasm --release
+
+# 2. Deploy ke production (skip build step, pakai artifact lokal)
+vercel deploy --prebuilt --prod
+```
+
+Selesai. URL production langsung live.
+
+---
+
+## Cara Lama — Vercel GitHub Integration (Auto-Deploy, tapi Rewel)
 
 1. Buka https://vercel.com/new
 2. **Import Git Repository** → pilih `nicholasnugraha/WeatherWise`
