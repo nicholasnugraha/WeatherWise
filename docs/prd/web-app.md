@@ -161,17 +161,17 @@ Web app ini **bukan** produk komersial atau publik. Ia adalah alat personal yang
 | **Hosting** | Vercel | Edge CDN, free tier cukup |
 | **Backend Proxy** | Vercel Edge Functions / Cloudflare Workers | Untuk hide API key + handle CORS |
 
-### 6.2 Dependencies yang AKAN DIHAPUS (clean up)
+### 6.2 Dependencies yang akan dimodifikasi (revisi v0.2)
 
-Dari audit pubspec.yaml, dependencies ini di-declare tapi **0 penggunaan** di `lib/`:
+Dari audit pubspec.yaml + DESIGN.md Stitch, keputusan cleanup berubah:
 
-| Package | Status | Tindakan |
-|---|---|---|
-| `rive: ^0.13.4` | Tidak ada `.riv` file, tidak ada import | ❌ **Hapus** |
-| `flutter_svg: ^2.0.10+1` | Tidak ada import | ❌ **Hapus** |
-| `google_fonts: ^6.2.1` | Tidak ada import | ❌ **Hapus** |
+| Package | Status | Tindakan | Alasan |
+|---|---|---|---|
+| `rive: ^0.13.4` | Tidak ada `.riv` file, tidak ada import | ❌ **Hapus** | Dead dep |
+| `flutter_svg: ^2.0.10+1` | Tidak ada import | ❌ **Hapus** | Pakai Material Icons cukup |
+| `google_fonts: ^6.2.1` | 0 penggunaan di lib/, tapi DESIGN.md butuh **Inter** | ✅ **KEEP — sekarang dipakai** | Typography wajib Inter |
 
-Prinsip KISS: jangan maintain dependency yang tidak dipakai.
+Prinsip KISS: jangan maintain dependency yang tidak dipakai, **TAPI** jangan hapus dependency yang ternyata dibutuhkan oleh design system yang baru.
 
 ### 6.3 Dependencies BARU
 
@@ -480,8 +480,162 @@ Untuk menghindari scope creep, ini **tidak akan dibangun** di versi awal kecuali
 
 ---
 
-## 16. Changelog
+## 16. Design Reference (Stitch MCP)
+
+**Source:** Stitch project "Material 3 Web UI" (ID: `16629827602854843266`)
+**Ekspor diterima:** 2026-06-18 (zip 9 screens + 2 DESIGN.md + PRD copy)
+
+### 16.1 Screen Inventory
+
+| Screen | Light | Dark | Tujuan |
+|---|---|---|---|
+| `weatherwise_dashboard` | ✅ | ✅ | Tampilan utama — hero + hourly + metrics + 7-day sidebar |
+| `weatherwise_dashboard_light_mode_consistent_layout` | ✅ | — | Versi final dashboard light (pakai sebagai referensi utama) |
+| `prakiraan_cuaca_detail` | ✅ | ✅ | 7-day forecast sebagai kartu grid |
+| `peta_radar_hujan` | ✅ | ✅ | Peta radar dengan RainViewer overlay |
+| `peta_radar_hujan_fixed_layout` | ✅ | — | Versi final radar (pakai sebagai referensi utama) |
+| `weatherwise_design_system` | — | — | DESIGN.md — token utama |
+| `atmosphere` | — | — | DESIGN.md alternatif (lebih M3 strict) |
+
+**Acuan utama:** `weatherwise_dashboard_light_mode_consistent_layout` + `weatherwise_design_system/DESIGN.md`.
+
+### 16.2 Design Tokens (extracted)
+
+#### Light Mode
+```dart
+// ColorScheme.fromSeed + override
+primary: Color(0xFF00629D)              // Deep Sky Blue (muted)
+primaryContainer: Color(0xFF00A3FF)     // Brand Sky Blue (CTAs, hero card)
+onPrimary: Color(0xFFFFFFFF)
+onPrimaryContainer: Color(0xFF00375A)
+
+secondaryContainer: Color(0xFFDAE3F0)   // Light gray-blue (chips, surfaces)
+onSecondaryContainer: Color(0xFF5C6570)
+
+tertiaryContainer: Color(0xFFEB8104)    // Sunny accent
+onTertiaryContainer: Color(0xFF522900)
+
+surface: Color(0xFFF7F9FF)              // Cool off-white (page background)
+onSurface: Color(0xFF171C22)            // Deep charcoal (text)
+surfaceContainer: Color(0xFFEAEEF6)     // Card background (slightly tinted)
+surfaceContainerLowest: Color(0xFFFFFFFF)
+surfaceContainerHigh: Color(0xFFE4E8F0)
+
+outline: Color(0xFF6F7883)
+outlineVariant: Color(0xFFBEC7D4)       // 10% opacity border untuk cards
+
+// Dynamic weather accents
+accentSunny: Color(0xFFFFB800)
+accentStorm: Color(0xFF7B61FF)
+accentPrecip: Color(0xFF00D1FF)
+```
+
+#### Dark Mode
+```dart
+primary: Color(0xFF98CBFF)              // Inverse primary (lighter blue)
+primaryContainer: Color(0xFF1C252E)     // Charcoal Blue
+onPrimaryContainer: Color(0xFF00A3FF)   // Bright accent on dark
+surface: Color(0xFF0B1117)              // Deep navy-black
+onSurface: Color(0xFFEDF1F9)            // Light gray for text
+```
+
+#### Typography (Inter via google_fonts)
+```dart
+// TextTheme (custom di ThemeData)
+displayLarge: TextStyle(fontFamily: 'Inter', fontSize: 80, fontWeight: w700, height: 1.125, letterSpacing: -0.04em)  // Hero temperature
+headlineLarge: TextStyle(fontFamily: 'Inter', fontSize: 32, fontWeight: w600, height: 1.25)
+headlineLargeMobile: TextStyle(fontFamily: 'Inter', fontSize: 28, fontWeight: w600, height: 1.286)
+titleMedium: TextStyle(fontFamily: 'Inter', fontSize: 18, fontWeight: w600, height: 1.333)
+bodyMedium: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: w400, height: 1.5)
+labelSmall: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: w500, height: 1.333, letterSpacing: 0.05em)  // ALL CAPS for labels
+```
+
+#### Radius
+```dart
+radiusSm: 8.0
+radiusMd: 16.0       // DEFAULT — search bars, chips
+radiusLg: 24.0       // Cards (xl in DESIGN.md)
+radiusXl: 32.0
+radiusFull: 9999.0   // Pill buttons, stadium shape
+```
+
+#### Spacing (4px base unit)
+```dart
+spaceUnit: 4.0
+gutterMobile: 16.0
+gutterDesktop: 24.0
+marginSafe: 24.0
+maxWidth: 1200.0
+```
+
+### 16.3 Layout Architecture
+
+**Desktop (≥1024px) — three-column:**
+```
+┌─────────┬──────────────────────────────┬──────────────┐
+│ Sidebar │ Center Column (max 1200px)   │ 7-Day Side   │
+│ 240px   │ • Top bar (search + utils)   │ 280-320px    │
+│         │ • Hero card (blue)           │              │
+│ Logo    │ • 24-hour forecast strip     │ Today        │
+│ Nav     │ • 2x3 metric grid            │ Sat          │
+│ Items   │                              │ Sun          │
+│         │                              │ ...          │
+│ Settings│                              │              │
+└─────────┴──────────────────────────────┴──────────────┘
+```
+
+**Tablet (600-1024px) — two-column:**
+- Sidebar collapses to NavigationRail (compact, ~80px)
+- 7-day sidebar moves BELOW center column (full-width)
+
+**Mobile (<600px) — single-column + bottom nav:**
+- Sidebar → NavigationBar di bottom (3 items: Dashboard, Forecast, Radar)
+- 7-day forecast di-swipe / dipisah ke route `/forecast`
+- Hero card tetap, metric grid jadi 2 kolom
+
+### 16.4 Navigation Items (Sidebar)
+
+| Label Indonesia | Route | Icon (Material Symbols) |
+|---|---|---|
+| Dashboard | `/` | `dashboard` |
+| Prakiraan | `/forecast` | `cloud` |
+| Peta Radar | `/radar` | `map` |
+| (Settings) | `/settings` | `settings` (di bottom sidebar) |
+
+**Catatan:** Stitch pakai "Hourly, Daily, Precipitation, Radar" sebagai 4 nav items — terlalu granular. Kita collapse jadi 3 items utama karena hourly + precipitation adalah sub-view dari Dashboard. Sesuai KISS.
+
+### 16.5 Inkonsistensi yang Ditemukan & Fix
+
+| # | Sumber | Masalah | Fix yang Diterapkan |
+|---|---|---|---|
+| IC1 | `weatherwise_dashboard` | Brand "SkyWise Pro" (1 screen) vs "WeatherWise" (semua lainnya) | **Fix:** Selalu pakai **WeatherWise** + tagline "Global Forecasts" |
+| IC2 | Multiple screens | Campuran English ("Last updated: 2 minutes ago", "SkyWise Weather Systems") dan Indonesian | **Fix:** Semua UI string **Bahasa Indonesia** only |
+| IC3 | `prakiraan_cuaca_detail` (Light) | Card "Sabtu" hanya menampilkan 2 metric boxes, card lainnya 4 | **Fix:** Standardize semua daily card pakai 2×2 grid pill-boxes |
+| IC4 | Multiple screens | "Sunrise/Sunset" muncul di dashboard tapi tidak di forecast | **Fix:** Konsisten — sunrise/sunset hanya di dashboard (lebih cocok konteksnya) |
+| IC5 | Nav items | "Hourly", "Daily", "Precipitation", "Radar" sebagai 4 items terpisah | **Fix:** Collapse jadi 3 items (Dashboard, Prakiraan, Peta Radar) sesuai KISS |
+
+### 16.6 Design Notes untuk Implementation
+
+- **Cards:** `rounded-xl` (24px), 1px border `outlineVariant` (10% opacity), no shadow di light mode
+- **Pill buttons:** `StadiumBorder` shape, primary pakai `primaryContainer` (#00A3FF) dengan white text
+- **Hero card:** Background gradient `primary` → `primaryContainer` (subtle, ~135deg)
+- **Search bar:** Pill shape dengan border tipis, leading icon `search`
+- **Active nav item:** Rounded `radiusMd` background `primaryContainer` + white text
+- **Weather icons:** Material Symbols Outlined (line-weight, thin stroke)
+- **Glassmorphic overlays:** `BackdropFilter` dengan `ImageFilter.blur(sigmaX: 12, sigmaY: 12)`, opacity 60%
+- **Min touch target:** 44x44px (semua interactive elements)
+- **Skeleton loaders:** Animated grey-tone blocks yang mirror card layout saat fetch
+
+### 16.7 Component Reference Files (untuk dev iter)
+
+- Screenshots PNG ada di branch `web-app` di `docs/design/screens/*.png` (akan di-commit terpisah)
+- Stitch project live di `stitch.withgoogle.com/projects/16629827602854843266`
+
+---
+
+## 17. Changelog
 
 | Date | Version | Perubahan |
 |---|---|---|
 | 2026-06-18 | 0.1 | Initial draft — menunggu UI design reference |
+| 2026-06-18 | 0.2 | Design reference dari Stitch ditambahkan; `google_fonts` di-keep untuk Inter; Section 6.2 direvisi; Section 16 (Design Reference) baru |
