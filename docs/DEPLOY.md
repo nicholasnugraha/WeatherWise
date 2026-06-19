@@ -49,13 +49,23 @@ vercel          # deploy ke preview URL
 
 ## Cache Strategy
 
-`vercel.json` mengarahkan Vercel untuk cache:
-- `.vercel/cache/flutter` — Flutter SDK (download sekali, reuse)
-- `.vercel/cache/pub-cache` — Dart pub packages
-- `.vercel/cache/build-artifacts` — build intermediates
+Vercel's `vercel.json` **does not support a top-level `cache` property** for
+arbitrary filesystem paths (only built-in paths like `node_modules` are cached
+automatically). Practical implications:
 
-First build: ~3-5 menit (download Flutter SDK)
-Subsequent builds: ~1-2 menit (cached)
+- **Flutter SDK download**: ~700MB compressed, ~1-2 minutes per cold build.
+  `vercel-build.sh` uses the precompiled tarball from `storage.googleapis.com`
+  for the fastest install. Subsequent builds in the same deployment will
+  re-download unless you configure [Vercel build cache via the CLI's
+  `--cache` flag](https://vercel.com/docs/cli/build#caching).
+- **Dart pub cache**: kept at `$HOME/.pub-cache` (outside project tree) so it
+  doesn't bloat the deployment, but it's not cached between builds.
+- **Build artifacts**: regenerated every build (~30s for build_runner).
+
+If cold build times become a problem, options are:
+1. Upgrade to Vercel Pro for longer build timeout + larger cache
+2. Use a pre-built Docker image with Flutter pre-installed (custom build
+   environment — Enterprise tier)
 
 ## Environment Variables
 

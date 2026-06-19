@@ -3,11 +3,6 @@
   "outputDirectory": "build/web",
   "framework": null,
   "installCommand": "true",
-  "cache": [
-    ".vercel/cache/flutter",
-    ".vercel/cache/pub-cache",
-    ".vercel/cache/build-artifacts"
-  ],
   "headers": [
     {
       "source": "/(.*)",
