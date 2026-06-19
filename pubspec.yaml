@@ -66,4 +66,4 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
-    - assets/.env
+    - assets/env.config

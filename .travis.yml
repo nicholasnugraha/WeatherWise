@@ -26,14 +26,14 @@ before_install:
 install:
   - travis_wait 30 flutter pub get
   # Inject the API key from the secure Travis env var WEATHER_API_KEY into
-  # assets/.env right before build_runner. If the env var is empty, the
-  # placeholder in assets/.env (committed in git) is used.
+  # assets/env.config right before build_runner. If the env var is empty, the
+  # placeholder in assets/env.config (committed in git) is used.
   - |
     if [ -n "$WEATHER_API_KEY" ]; then
-      echo "WEATHER_API_KEY=$WEATHER_API_KEY" > /tmp/weatherwise_flutter/assets/.env
-      echo "Wrote API key from Travis env into assets/.env"
+      echo "WEATHER_API_KEY=$WEATHER_API_KEY" > /tmp/weatherwise_flutter/assets/env.config
+      echo "Wrote API key from Travis env into assets/env.config"
     else
-      echo "WEATHER_API_KEY env var not set; using whatever is in assets/.env"
+      echo "WEATHER_API_KEY env var not set; using whatever is in assets/env.config"
     fi
   # Safety net: patch any plugin that still references flutter.compileSdkVersion
   # in case dependency_overrides didn't catch it. Injects compileSdk via sed.

@@ -19,7 +19,7 @@ class ApiConfig {
     final fromEnv = dotenv.env['WEATHER_API_KEY'] ?? '';
     if (fromEnv.isEmpty && kDebugMode) {
       debugPrint(
-        '[ApiConfig] WEATHER_API_KEY is empty. Set --dart-define or fill assets/.env.',
+        '[ApiConfig] WEATHER_API_KEY is empty. Set --dart-define or fill assets/env.config.',
       );
     }
     return fromEnv;
@@ -35,7 +35,7 @@ class ApiConfig {
   static String get keySource {
     const fromDartDefine = String.fromEnvironment('WEATHER_API_KEY');
     if (fromDartDefine.isNotEmpty) return 'dart-define';
-    if ((dotenv.env['WEATHER_API_KEY'] ?? '').isNotEmpty) return 'assets/.env';
+    if ((dotenv.env['WEATHER_API_KEY'] ?? '').isNotEmpty) return 'assets/env.config';
     return 'none';
   }
 }

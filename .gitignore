@@ -53,3 +53,4 @@ app.*.map.json
 
 # Track assets/.env so the shipped APK can read the API key without
 # setting Travis env vars. assets/.env is force-added via `git add -f`.
+.vercel

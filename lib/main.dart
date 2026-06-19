@@ -15,7 +15,7 @@ Future<void> main() async {
   setPathUrlStrategy();
 
   // Load .env file bundled in the APK/web before any service that depends on it.
-  await dotenv.load(fileName: 'assets/.env');
+  await dotenv.load(fileName: 'assets/env.config');
   await HiveConfig.init();
 
   runApp(const ProviderScope(child: WeatherWiseApp()));
