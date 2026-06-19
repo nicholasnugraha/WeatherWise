@@ -31,6 +31,21 @@ export PATH="$FLUTTER_DIR/bin:$PATH"
 export PUB_CACHE="${PUB_CACHE:-$HOME/.pub-cache}"
 
 # -----------------------------------------------------------------------------
+# Trust Flutter SDK's bundled .git directory (CVE-2022-24765 mitigation)
+# -----------------------------------------------------------------------------
+#
+# Git refuses to operate on a repository owned by a different user ("dubious
+# ownership"). The Flutter SDK tarball contains a .git/ directory owned by the
+# user that built the tarball (not the Vercel build user). Flutter invokes
+# git internally during version detection, so we must whitelist the directory
+# before any `flutter` command runs.
+#
+# Using '*' is safe here because the Vercel build sandbox is controlled and
+# we only ever operate on Flutter SDK directories we just downloaded.
+git config --global --add safe.directory '*'
+git config --global --add safe.directory "$FLUTTER_DIR"
+
+# -----------------------------------------------------------------------------
 # Flutter SDK
 # -----------------------------------------------------------------------------
 
