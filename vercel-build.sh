@@ -2,16 +2,18 @@
 #
 # Vercel build script for WeatherWise Flutter Web App.
 #
-# Why this is more complex than a one-liner:
-#   1. Flutter refuses to run as root since 3.10 ("Flutter should not be
-#      run as root"). Vercel's build sandbox runs as root, so we create a
-#      dedicated non-root user and re-exec under it for the build.
-#   2. Git refuses to operate on directories owned by another user
-#      (CVE-2022-24765 mitigation). The precompiled Flutter SDK tarball
-#      bundles a .git/ owned by the upstream tarball builder, so we
-#      whitelist it via `safe.directory '*'`.
-#   3. After the build, we chown the project dir back to root so Vercel's
-#      deployment step can read it.
+# Why this is layered:
+#   1. Flutter refuses to run as root since 3.10 — Vercel builds run as
+#      root, so we must switch to a non-root user before invoking flutter.
+#   2. Vercel's build sandbox is minimal — `sudo` is NOT installed. We
+#      fall back through `runuser` → `setpriv` → `su` to find whatever
+#      user-switching tool is available.
+#   3. Git refuses to operate on a repo owned by another user (CVE-2022-
+#      24765 mitigation). Flutter's bundled .git/ in the SDK tarball is
+#      owned by the upstream tarball builder; we whitelist via safe.directory.
+#   4. After the build we chown the project dir back to root so Vercel's
+#      deploy step can read it (Flutter SDK + pub cache stay owned by
+#      the builder user for next-build cache).
 
 set -euo pipefail
 
@@ -25,6 +27,7 @@ FLUTTER_DIR="/opt/flutter"
 BUILDER_USER="vbuild"
 BUILDER_HOME="/home/$BUILDER_USER"
 PROJECT_DIR="$(pwd)"
+BUILDER_SCRIPT_PATH="/tmp/weatherwise-builder.sh"
 
 # -----------------------------------------------------------------------------
 # Step 1: Create non-root builder user
@@ -49,10 +52,6 @@ fi
 # -----------------------------------------------------------------------------
 # Step 3: Hand ownership to builder
 # -----------------------------------------------------------------------------
-# Builder needs write access to:
-#   - Flutter SDK (first-run setup downloads Dart SDK + creates caches)
-#   - ~/.pub-cache (Dart package cache)
-#   - Project dir (.dart_tool/, build/, generated *.freezed.dart/*.g.dart files)
 mkdir -p "$BUILDER_HOME/.pub-cache"
 chown -R "$BUILDER_USER:$BUILDER_USER" \
   "$FLUTTER_DIR" \
@@ -60,17 +59,20 @@ chown -R "$BUILDER_USER:$BUILDER_USER" \
   "$PROJECT_DIR"
 
 # -----------------------------------------------------------------------------
-# Step 4: Run the build as non-root
+# Step 4: Write the builder script to a temp file
 # -----------------------------------------------------------------------------
-echo "==> Running build as '$BUILDER_USER'"
-sudo -u "$BUILDER_USER" -E env \
-  PATH="$FLUTTER_DIR/bin:$PATH" \
-  PUB_CACHE="$BUILDER_HOME/.pub-cache" \
-  HOME="$BUILDER_HOME" \
-  bash <<BUILDER_SCRIPT
+# Writing to a file avoids messy heredoc quoting when passing to whichever
+# user-switching tool we end up using (sudo/runuser/setpriv/su all have
+# different stdin / -c semantics).
+cat > "$BUILDER_SCRIPT_PATH" <<BUILDER_SCRIPT
+#!/bin/bash
 set -euo pipefail
 
-# Trust Flutter SDK's bundled .git (CVE-2022-24765 mitigation).
+export PATH="$FLUTTER_DIR/bin:\$PATH"
+export PUB_CACHE="$BUILDER_HOME/.pub-cache"
+export HOME="$BUILDER_HOME"
+
+# Trust Flutter SDK's bundled .git directory (CVE-2022-24765).
 git config --global --add safe.directory '*'
 
 cd "$PROJECT_DIR"
@@ -91,14 +93,46 @@ flutter build web --wasm --release
 echo "==> Build complete. Output: build/web"
 BUILDER_SCRIPT
 
+chmod +x "$BUILDER_SCRIPT_PATH"
+chown "$BUILDER_USER:$BUILDER_USER" "$BUILDER_SCRIPT_PATH"
+
+# -----------------------------------------------------------------------------
+# Step 5: Run the builder script as non-root, using whichever user-switching
+# tool the sandbox provides. Tested fallback order: sudo > runuser > setpriv > su
+# -----------------------------------------------------------------------------
+echo "==> Running build as '$BUILDER_USER'"
+
+run_as_builder() {
+  if command -v sudo >/dev/null 2>&1; then
+    echo "    (via sudo)"
+    sudo -u "$BUILDER_USER" -- "$@"
+  elif command -v runuser >/dev/null 2>&1; then
+    echo "    (via runuser)"
+    runuser -u "$BUILDER_USER" -- "$@"
+  elif command -v setpriv >/dev/null 2>&1; then
+    echo "    (via setpriv)"
+    local uid gid
+    uid=$(id -u "$BUILDER_USER")
+    gid=$(id -g "$BUILDER_USER")
+    setpriv --reuid="$uid" --regid="$gid" --init-groups -- "$@"
+  elif command -v su >/dev/null 2>&1; then
+    echo "    (via su)"
+    su -s /bin/bash "$BUILDER_USER" -c "$(printf '%q ' "$@")"
+  else
+    echo "ERROR: no user-switching tool available (tried sudo, runuser, setpriv, su)" >&2
+    exit 1
+  fi
+}
+
+run_as_builder bash "$BUILDER_SCRIPT_PATH"
 BUILD_STATUS=$?
 
 # -----------------------------------------------------------------------------
-# Step 5: Restore project ownership so Vercel can deploy
+# Step 6: Restore project ownership so Vercel can deploy
 # -----------------------------------------------------------------------------
-# Flutter SDK and pub cache stay owned by builder for next build's cache,
-# but the project output must be readable by the Vercel deploy process.
 echo "==> Restoring project ownership"
 chown -R root:root "$PROJECT_DIR" 2>/dev/null || true
+# Flutter SDK + pub cache stay owned by builder for next-build cache.
+rm -f "$BUILDER_SCRIPT_PATH"
 
 exit $BUILD_STATUS
