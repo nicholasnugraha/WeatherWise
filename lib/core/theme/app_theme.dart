@@ -12,8 +12,8 @@ class AppTheme {
   AppTheme._();
 
   /// Inter via google_fonts — the design system mandates Inter exclusively.
-  /// Returns the family name so TextTheme can reference it consistently.
-  static String get _fontFamily => GoogleFonts.inter().fontFamily ?? 'Inter';
+  /// Cached as static final to avoid repeated HTTP font loading on web.
+  static final String _fontFamily = GoogleFonts.inter().fontFamily ?? 'Inter';
 
   static TextTheme _buildTextTheme(TextTheme base) {
     // GoogleFonts.interTextTheme() applies Inter across the whole theme

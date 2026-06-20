@@ -30,7 +30,7 @@ vercel link
 
 ```bash
 # 1. Build web app lokal
-flutter build web --wasm --release
+flutter build web --release
 
 # 2. Deploy ke production (skip build step, pakai artifact lokal)
 vercel deploy --prebuilt --prod

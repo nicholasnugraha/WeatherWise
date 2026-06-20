@@ -38,9 +38,10 @@ String uviLabel(double uvi) {
   return 'Ekstrem';
 }
 
-/// Converts Kelvin dew-point to Celsius, formatted with degree symbol.
-String formatDewPoint(double kelvin) {
-  final celsius = kelvin - 273.15;
+/// Formats dew-point temperature (Celsius) with degree symbol.
+/// With units=metric, OpenWeatherMap One Call returns dew_point in Celsius,
+/// not Kelvin — so no conversion needed.
+String formatDewPoint(double celsius) {
   return '${celsius.round()}°';
 }
 

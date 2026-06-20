@@ -17,10 +17,10 @@ class RainViewerResponse with _$RainViewerResponse {
 @freezed
 class RadarData with _$RadarData {
   const factory RadarData({
-    required int past,
-    required int nowcast,
-    @JsonKey(fromJson: _framesFromJson) required List<RadarFrame> pastFrames,
-    @JsonKey(fromJson: _framesFromJson) List<RadarFrame>? nowcastFrames,
+    // RainViewer API returns `past` and `nowcast` as Lists of RadarFrame objects,
+    // not as integers. Map them directly to our frame lists.
+    @JsonKey(name: 'past', fromJson: _framesFromJson) required List<RadarFrame> pastFrames,
+    @JsonKey(name: 'nowcast', fromJson: _framesFromJson) List<RadarFrame>? nowcastFrames,
   }) = _RadarData;
 
   factory RadarData.fromJson(Map<String, dynamic> json) =>

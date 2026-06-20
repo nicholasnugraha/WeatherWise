@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/forecast/presentation/screens/forecast_screen.dart';
 import '../../features/radar/presentation/screens/radar_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../widgets/app_shell.dart';
 import 'routes.dart';
 
@@ -44,6 +45,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             name: Routes.radarName,
             pageBuilder: (context, state) => const NoTransitionPage(
               child: RadarScreen(),
+            ),
+          ),
+          GoRoute(
+            path: Routes.settings,
+            name: Routes.settingsName,
+            pageBuilder: (context, state) => const NoTransitionPage(
+              child: SettingsScreen(),
             ),
           ),
         ],
