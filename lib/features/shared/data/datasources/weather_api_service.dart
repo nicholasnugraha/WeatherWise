@@ -8,7 +8,8 @@ class WeatherApiService {
   WeatherApiService(this._dio);
 
   /// Get complete weather data (current + hourly + daily) in one call.
-  /// Endpoint: /data/2.5/onecall
+  /// Endpoint: /data/3.0/onecall
+  /// Requires active One Call by Call subscription (free up to 1,000 calls/day).
   /// Docs: https://openweathermap.org/api/one-call
   ///
   /// [exclude] is a comma-separated list of parts to exclude from the response
@@ -22,7 +23,7 @@ class WeatherApiService {
     String exclude = 'minutely,alerts',
   }) async {
     final response = await _dio.get(
-      '/data/2.5/onecall',
+      '/data/3.0/onecall',
       queryParameters: {
         'lat': latitude,
         'lon': longitude,
