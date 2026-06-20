@@ -6,7 +6,8 @@ class DioClient {
       baseUrl: 'https://api.openweathermap.org',
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
-      headers: {'Content-Type': 'application/json'},
+      // No Content-Type header — GET requests don't need it, and sending it
+      // triggers a CORS preflight (OPTIONS) that OWM doesn't support (405).
     ));
   }
 
