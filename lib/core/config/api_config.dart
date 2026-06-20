@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class ApiConfig {
   static const String openWeatherBaseUrl = 'https://api.openweathermap.org/data/2.5';
-  static const String onecallBaseUrl = 'https://api.openweathermap.org/data/3.0';
+  static const String onecallBaseUrl = 'https://api.openweathermap.org/data/2.5';
   static const String geocodingBaseUrl = 'https://api.openweathermap.org/geo/1.0';
   static const String rainViewerBaseUrl = 'https://api.rainviewer.com';
 

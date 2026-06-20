@@ -60,32 +60,11 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
         ? ref.read(radarViewModelProvider.notifier).getCurrentTileUrl()
         : null;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Peta Radar'),
-        toolbarHeight: 72,
-        actions: [
-          IconButton(
-            tooltip: 'Lokasi saya',
-            icon: const Icon(Icons.my_location),
-            onPressed: () => _mapController.move(center, 8),
-          ),
-          IconButton(
-            tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh),
-            onPressed: () => ref
-                .read(radarViewModelProvider.notifier)
-                .loadRadarData(),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-        ],
-      ),
-      body: _buildBody(
-        context,
-        radarState: radarState,
-        center: center,
-        tileUrl: tileUrl,
-      ),
+    return _buildBody(
+      context,
+      radarState: radarState,
+      center: center,
+      tileUrl: tileUrl,
     );
   }
 
@@ -160,12 +139,33 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
           ),
         ),
 
-        // Top-right: zoom controls overlay.
+        // Top-right: location + refresh + zoom controls overlay.
         Positioned(
           top: AppSpacing.md,
           right: AppSpacing.md,
           child: SafeArea(
-            child: RadarZoomControls(mapController: _mapController),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'location',
+                  tooltip: 'Lokasi saya',
+                  onPressed: () => _mapController.move(center, 8),
+                  child: const Icon(Icons.my_location),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                FloatingActionButton.small(
+                  heroTag: 'refresh',
+                  tooltip: 'Refresh',
+                  onPressed: () => ref
+                      .read(radarViewModelProvider.notifier)
+                      .loadRadarData(),
+                  child: const Icon(Icons.refresh),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                RadarZoomControls(mapController: _mapController),
+              ],
+            ),
           ),
         ),
 

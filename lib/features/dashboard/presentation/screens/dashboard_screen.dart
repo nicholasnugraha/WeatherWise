@@ -32,9 +32,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   static const _defaultCity = 'Jakarta';
-  // Fallback coords if user lands on /forecast first (no dashboard city yet).
-  static const _fallbackLat = -6.2088;
-  static const _fallbackLon = 106.8456;
 
   @override
   void initState() {
@@ -81,34 +78,30 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       });
     }
 
-    final width = MediaQuery.sizeOf(context).width;
-    final isDesktop = width >= Breakpoints.desktop;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard'),
-        toolbarHeight: 72,
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          await ref.read(homeViewModelProvider.notifier).refresh();
-          final city = ref.read(homeViewModelProvider).weather;
-          if (city != null) {
-            await ref.read(forecastViewModelProvider.notifier).loadForecast(
-                  city.lat,
-                  city.lon,
-                );
-          }
-        },
-        child: _DashboardBody(
-          homeState: homeState,
-          forecastState: forecastState,
-          isDesktop: isDesktop,
-          onRetry: () {
-            ref.read(homeViewModelProvider.notifier).loadWeatherByCity(_defaultCity);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.maxWidth >= Breakpoints.desktop;
+        return RefreshIndicator(
+          onRefresh: () async {
+            await ref.read(homeViewModelProvider.notifier).refresh();
+            final city = ref.read(homeViewModelProvider).weather;
+            if (city != null) {
+              await ref.read(forecastViewModelProvider.notifier).loadForecast(
+                    city.lat,
+                    city.lon,
+                  );
+            }
           },
-        ),
-      ),
+          child: _DashboardBody(
+            homeState: homeState,
+            forecastState: forecastState,
+            isDesktop: isDesktop,
+            onRetry: () {
+              ref.read(homeViewModelProvider.notifier).loadWeatherByCity(_defaultCity);
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -130,18 +123,20 @@ class _DashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final weather = homeState.weather;
 
-    if (homeState.status == HomeStatus.error || weather == null) {
+    // No data at all → show error or loading state.
+    if (weather == null) {
       if (homeState.status == HomeStatus.error) {
         return _ErrorState(
           message: homeState.errorMessage ?? 'Terjadi kesalahan',
           onRetry: onRetry,
         );
       }
-      if (homeState.status == HomeStatus.idle ||
-          homeState.status == HomeStatus.loading) {
-        return const _LoadingState();
-      }
+      return const _LoadingState();
     }
+
+    // Weather available — show content. If status is error (e.g. refresh
+    // failed), show stale data with a small error banner.
+    final hasError = homeState.status == HomeStatus.error;
 
     // Daily entries (7) for sidebar + metric data for grid.
     final dailyEntries =
@@ -154,10 +149,14 @@ class _DashboardBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (hasError)
+            _ErrorBanner(
+              message: homeState.errorMessage ?? 'Terjadi kesalahan saat memuat data',
+            ),
           const DashboardSearchBar(),
           const SizedBox(height: AppSpacing.lg),
           DashboardHeroCard(
-            weather: weather!,
+            weather: weather,
             location: homeState.location,
           ),
           if (hourlyEntries.isNotEmpty) ...[
@@ -222,6 +221,41 @@ class _LoadingState extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, size: 18, color: scheme.onErrorContainer),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: scheme.onErrorContainer,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

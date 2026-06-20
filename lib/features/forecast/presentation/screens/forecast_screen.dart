@@ -67,49 +67,47 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
     final homeState = ref.watch(homeViewModelProvider);
     final cityName = homeState.weather?.cityName ?? 'Jakarta';
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Prakiraan'),
-        toolbarHeight: 72,
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          final w = ref.read(homeViewModelProvider).weather;
-          final lat = w?.lat ?? _fallbackLat;
-          final lon = w?.lon ?? _fallbackLon;
-          await ref.read(forecastViewModelProvider.notifier).loadForecast(lat, lon);
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _PageHeader(cityName: cityName),
-              const SizedBox(height: AppSpacing.lg),
-              _buildContent(context, state),
-            ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return RefreshIndicator(
+          onRefresh: () async {
+            final w = ref.read(homeViewModelProvider).weather;
+            final lat = w?.lat ?? _fallbackLat;
+            final lon = w?.lon ?? _fallbackLon;
+            await ref.read(forecastViewModelProvider.notifier).loadForecast(lat, lon);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _PageHeader(cityName: cityName),
+                const SizedBox(height: AppSpacing.lg),
+                _buildContent(context, state, constraints.maxWidth),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildContent(BuildContext context, ForecastState state) {
+  Widget _buildContent(BuildContext context, ForecastState state, double availableWidth) {
     switch (state.status) {
       case ForecastStatus.idle:
       case ForecastStatus.loading:
         if (state.forecast == null) {
           return const _LoadingState();
         }
-        return _ForecastList(entries: state.forecast!.entries);
+        return _ForecastList(entries: state.forecast!.entries, availableWidth: availableWidth);
       case ForecastStatus.error:
         return _ErrorState(
           message: state.errorMessage ?? 'Terjadi kesalahan',
           onRetry: _maybeLoad,
         );
       case ForecastStatus.success:
-        return _ForecastList(entries: state.forecast!.entries);
+        return _ForecastList(entries: state.forecast!.entries, availableWidth: availableWidth);
     }
   }
 }
@@ -154,9 +152,9 @@ class _PageHeader extends StatelessWidget {
 }
 
 class _ForecastList extends StatelessWidget {
-  const _ForecastList({required this.entries});
-
+  const _ForecastList({required this.entries, required this.availableWidth});
   final List<ForecastEntry> entries;
+  final double availableWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -171,9 +169,8 @@ class _ForecastList extends StatelessWidget {
     final today = entries.first;
     final rest = entries.skip(1).toList();
 
-    final width = MediaQuery.sizeOf(context).width;
     final crossAxisCount =
-        width >= Breakpoints.tablet ? 3 : 2;
+        availableWidth >= Breakpoints.tablet ? 3 : 2;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

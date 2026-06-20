@@ -123,9 +123,7 @@ class AppShell extends StatelessWidget {
                 route: Routes.settings,
               ),
               selected: false,
-              onTap: () {
-                // TODO(milestone-3): route to settings screen
-              },
+              onTap: () => context.go(Routes.settings),
             ),
           ),
           const SizedBox(height: AppSpacing.md),

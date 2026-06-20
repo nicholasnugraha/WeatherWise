@@ -98,7 +98,7 @@ class HomeViewModel extends StateNotifier<HomeState> {
     if (state.weather != null) {
       await loadWeatherByCity(state.weather!.cityName);
     } else {
-      await loadWeatherByLocation();
+      await loadWeatherByCity('Jakarta');
     }
   }
 }
