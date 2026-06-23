@@ -216,8 +216,13 @@ class WeatherRepositoryImpl implements WeatherRepository {
       lon: response.lon,
       temp: current.temp,
       feelsLike: current.feelsLike,
-      tempMin: current.temp,
-      tempMax: current.temp,
+      // OneCall 3.0 current object has no min/max — pull from daily[0].temp.
+      tempMin: (response.daily != null && response.daily!.isNotEmpty)
+          ? response.daily!.first.temp.min
+          : current.temp,
+      tempMax: (response.daily != null && response.daily!.isNotEmpty)
+          ? response.daily!.first.temp.max
+          : current.temp,
       humidity: current.humidity,
       pressure: current.pressure,
       windSpeed: current.windSpeed,

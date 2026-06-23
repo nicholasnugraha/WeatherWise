@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 import 'app_spacing.dart';
@@ -8,46 +7,59 @@ import 'app_spacing.dart';
 ///
 /// Tokens sourced from `docs/prd/web-app.md` Section 16 (Design Reference)
 /// which mirrors Stitch project `16629827602854843266` (Material 3 Web UI).
+///
+/// Inter font is bundled as assets (see pubspec.yaml fonts section) rather
+/// than loaded at runtime via google_fonts to ensure reliable rendering on
+/// all devices including tablets with slower connections.
 class AppTheme {
   AppTheme._();
 
-  /// Inter via google_fonts — the design system mandates Inter exclusively.
-  /// Cached as static final to avoid repeated HTTP font loading on web.
-  static final String _fontFamily = GoogleFonts.inter().fontFamily ?? 'Inter';
+  /// Bundled Inter font family — no HTTP fetch needed.
+  static const String _fontFamily = 'Inter';
 
   static TextTheme _buildTextTheme(TextTheme base) {
-    // GoogleFonts.interTextTheme() applies Inter across the whole theme
-    // while preserving our custom font sizes / weights defined in base.
-    return GoogleFonts.interTextTheme(base).copyWith(
+    return base.copyWith(
       // Hero temperature — display-temp per DESIGN.md: 80px / weight 700 / -0.04em.
-      displayLarge: GoogleFonts.inter(
+      displayLarge: const TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 80,
         fontWeight: FontWeight.w700,
         height: 1.125,    // 90px / 80px
         letterSpacing: -0.04 * 16, // -0.04em converted to logical px
       ),
       // headline-lg / headline-lg-mobile — handled by responsive Builder.
-      headlineLarge: GoogleFonts.inter(
+      headlineLarge: const TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 32,
         fontWeight: FontWeight.w600,
         height: 1.25,
       ),
-      titleMedium: GoogleFonts.inter(
+      titleMedium: const TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 18,
         fontWeight: FontWeight.w600,
         height: 1.333,
       ),
-      bodyMedium: GoogleFonts.inter(
+      bodyMedium: const TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
       ),
       // label-sm — all-caps for technical categories per DESIGN.md.
-      labelSmall: GoogleFonts.inter(
+      labelSmall: const TextStyle(
+        fontFamily: _fontFamily,
         fontSize: 12,
         fontWeight: FontWeight.w500,
         height: 1.333,
         letterSpacing: 0.05 * 12, // 0.05em converted to logical px
+      ),
+      // title-sm — used for forecast temperature labels.
+      titleSmall: const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.2,
       ),
     );
   }

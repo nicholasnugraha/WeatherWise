@@ -41,7 +41,7 @@ class HourlyForecastStrip extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             SizedBox(
-              height: 96,
+              height: 110,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: entries.length,
@@ -79,7 +79,7 @@ class _HourlySlot extends StatelessWidget {
       ),
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Text(
             timeLabel,
