@@ -72,7 +72,7 @@ class _HourlySlot extends StatelessWidget {
     final timeLabel = isFirst ? 'Sekarang' : '$hour:00';
 
     return Container(
-      width: 64,
+      width: 72,
       decoration: BoxDecoration(
         color: isFirst ? scheme.primaryContainer : Colors.transparent,
         borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
@@ -83,10 +83,12 @@ class _HourlySlot extends StatelessWidget {
         children: [
           Text(
             timeLabel,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: isFirst ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
-                  fontWeight: isFirst ? FontWeight.w600 : FontWeight.w500,
-                ),
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: isFirst ? FontWeight.w600 : FontWeight.w500,
+              color: isFirst ? scheme.onPrimaryContainer : scheme.onSurfaceVariant,
+            ),
           ),
           Icon(
             WeatherIconHelper.getWeatherIcon(entry.weatherMain, isDay: true),
@@ -95,10 +97,12 @@ class _HourlySlot extends StatelessWidget {
           ),
           Text(
             '${entry.temp.round()}°',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: isFirst ? scheme.onPrimaryContainer : scheme.onSurface,
-                  fontWeight: FontWeight.w600,
-                ),
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isFirst ? scheme.onPrimaryContainer : scheme.onSurface,
+            ),
           ),
         ],
       ),
