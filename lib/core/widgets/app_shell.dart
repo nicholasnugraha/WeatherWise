@@ -87,11 +87,21 @@ class AppShell extends StatelessWidget {
                     children: [
                       Text(
                         'WeatherWise',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          height: 1.333,
+                        ),
                       ),
                       Text(
                         'Global Forecasts',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              height: 1.333,
+                              letterSpacing: 0.05 * 12,
                               color: scheme.onSurfaceVariant,
                             ),
                       ),

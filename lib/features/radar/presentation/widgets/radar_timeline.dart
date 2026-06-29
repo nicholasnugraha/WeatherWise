@@ -113,12 +113,16 @@ class _RadarTimelineState extends ConsumerState<RadarTimeline> {
                       final mm = time.minute.toString().padLeft(2, '0');
                       return Text(
                         '$hh:$mm',
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight:
+                                  isCurrent ? FontWeight.w700 : FontWeight.w400,
+                              height: 1.333,
+                              letterSpacing: 0.05 * 12,
                               color: isCurrent
                                   ? scheme.primaryContainer
                                   : scheme.onSurfaceVariant,
-                              fontWeight:
-                                  isCurrent ? FontWeight.w700 : FontWeight.w400,
                             ),
                           );
                         }).toList(),
@@ -130,7 +134,12 @@ class _RadarTimelineState extends ConsumerState<RadarTimeline> {
           const SizedBox(width: AppSpacing.md),
           Text(
             '1x',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  height: 1.333,
+                  letterSpacing: 0.05 * 12,
                   color: scheme.onSurfaceVariant,
                 ),
           ),

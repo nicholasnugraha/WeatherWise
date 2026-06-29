@@ -26,22 +26,34 @@ class MetricCard extends StatelessWidget {
           children: [
             Text(
               data.label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    height: 1.333,
+                    letterSpacing: 0.05 * 12,
                     color: scheme.onSurfaceVariant,
                   ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               data.value,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 24,
                     fontWeight: FontWeight.w600,
+                    height: 1.33,
                     color: scheme.onSurface,
                   ),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               data.subtext,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    height: 1.43,
                     color: scheme.onSurfaceVariant,
                   ),
             ),

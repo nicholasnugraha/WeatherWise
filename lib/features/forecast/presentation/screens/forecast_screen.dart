@@ -128,23 +128,37 @@ class _PageHeader extends StatelessWidget {
             const SizedBox(width: AppSpacing.xs),
             Text(
               '$cityName, Indonesia',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                height: 1.5,
+                color: scheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
           'Prakiraan 7 Hari Ke Depan',
-          style: Theme.of(context).textTheme.headlineLarge,
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 32,
+            fontWeight: FontWeight.w600,
+            height: 1.25,
+            color: scheme.onSurface,
+          ),
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
           'Detail cuaca harian untuk membantu kamu merencanakan minggu ini dengan lebih baik.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontSize: 16,
+            fontWeight: FontWeight.w400,
+            height: 1.5,
+            color: scheme.onSurfaceVariant,
+          ),
         ),
       ],
     );
@@ -213,9 +227,13 @@ class _LoadingState extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Text(
             'Memuat prakiraan...',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              height: 1.5,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -240,7 +258,13 @@ class _ErrorState extends StatelessWidget {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              height: 1.5,
+              color: scheme.onSurface,
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           FilledButton.icon(

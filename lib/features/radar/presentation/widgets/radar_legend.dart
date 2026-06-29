@@ -38,9 +38,13 @@ class RadarLegend extends StatelessWidget {
         children: [
           Text(
             'Intensitas Curah Hujan',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: scheme.onSurface,
+            style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
                   fontWeight: FontWeight.w600,
+                  height: 1.333,
+                  letterSpacing: 0.05 * 12,
+                  color: scheme.onSurface,
                 ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -68,19 +72,34 @@ class RadarLegend extends StatelessWidget {
               children: [
                 Text(
                   'Ringan',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.333,
+                        letterSpacing: 0.05 * 12,
                         color: scheme.onSurfaceVariant,
                       ),
                 ),
                 Text(
                   'Sedang',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.333,
+                        letterSpacing: 0.05 * 12,
                         color: scheme.onSurfaceVariant,
                       ),
                 ),
                 Text(
                   'Lebat',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        height: 1.333,
+                        letterSpacing: 0.05 * 12,
                         color: scheme.onSurfaceVariant,
                       ),
                 ),

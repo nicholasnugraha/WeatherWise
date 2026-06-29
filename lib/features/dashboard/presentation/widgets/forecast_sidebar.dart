@@ -43,7 +43,12 @@ class ForecastSidebar extends StatelessWidget {
               const SizedBox(width: AppSpacing.xs),
               Text(
                 'PRAKIRAAN 7 HARI',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      height: 1.333,
+                      letterSpacing: 0.05 * 12,
                       color: scheme.onSurfaceVariant,
                     ),
               ),
@@ -89,9 +94,12 @@ class _ForecastSidebarRow extends StatelessWidget {
             width: 72,
             child: Text(
               dateLabel,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurface,
+              style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
                     fontWeight: isFirst ? FontWeight.w600 : FontWeight.w400,
+                    height: 1.5,
+                    color: scheme.onSurface,
                   ),
             ),
           ),
@@ -108,7 +116,11 @@ class _ForecastSidebarRow extends StatelessWidget {
                 Expanded(
                   child: Text(
                     weatherMainToIndonesian(entry.weatherMain),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          height: 1.43,
                           color: scheme.onSurfaceVariant,
                         ),
                     overflow: TextOverflow.ellipsis,
@@ -145,7 +157,11 @@ class _TempRange extends StatelessWidget {
       children: [
         Text(
           '${min.round()}°',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                height: 1.43,
                 color: scheme.onSurfaceVariant,
               ),
         ),
@@ -166,9 +182,12 @@ class _TempRange extends StatelessWidget {
         const SizedBox(width: AppSpacing.xs),
         Text(
           '${max.round()}°',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: scheme.onSurface,
+          style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
+                height: 1.2,
+                color: scheme.onSurface,
               ),
         ),
       ],

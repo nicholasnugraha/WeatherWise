@@ -35,7 +35,12 @@ class HourlyForecastStrip extends StatelessWidget {
           children: [
             Text(
               'PRAKIRAAN 24 JAM',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    height: 1.333,
+                    letterSpacing: 0.05 * 12,
                     color: scheme.onSurfaceVariant,
                   ),
             ),

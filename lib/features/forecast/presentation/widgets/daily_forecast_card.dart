@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../shared/domain/entities/forecast.dart';
 import '../../../home/presentation/widgets/weather_icon_helper.dart';
@@ -72,39 +71,52 @@ class DailyForecastCard extends StatelessWidget {
                           ),
                           child: Text(
                             'HARI INI',
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: scheme.onPrimaryContainer,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              height: 1.333,
+                              letterSpacing: 0.05 * 12,
+                              color: scheme.onPrimaryContainer,
+                            ),
                           ),
                         ),
                       if (featured) const SizedBox(height: AppSpacing.xs),
                       Text(
                         dateLabel,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: scheme.onSurface,
-                            ),
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          height: 1.333,
+                          color: scheme.onSurface,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         condition,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: scheme.onSurfaceVariant,
-                            ),
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          height: 1.5,
+                          color: scheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Icon(
                   icon,
-                  color: AppColors.lightPrimaryContainer,
+                  color: scheme.primary,
                   size: featured ? 40 : 32,
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            // Big temperature row.
+            // Big temperature row — uses scheme.primary (not primaryContainer)
+            // because primaryContainer in dark mode (#1C252E) equals the card
+            // background (#1C252E), making text invisible.
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
@@ -112,7 +124,7 @@ class DailyForecastCard extends StatelessWidget {
                 Text(
                   '${entry.tempMax.round()}°',
                   style: TextStyle(
-                    color: scheme.primaryContainer,
+                    color: scheme.primary,
                     fontSize: featured ? 48 : 32,
                     fontWeight: FontWeight.w700,
                     height: 1.0,
@@ -209,17 +221,25 @@ class _InlineMetricItem extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              height: 1.333,
+              letterSpacing: 0.05 * 12,
+              color: scheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
             value,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurface,
-                ),
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              height: 1.5,
+              color: scheme.onSurface,
+            ),
           ),
         ],
       ),
@@ -289,10 +309,14 @@ class _PillBox extends StatelessWidget {
               child: Text(
                 value,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: scheme.onSurface,
-                      fontWeight: FontWeight.w500,
-                    ),
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  height: 1.333,
+                  letterSpacing: 0.05 * 12,
+                  color: scheme.onSurface,
+                ),
               ),
             ),
           ],

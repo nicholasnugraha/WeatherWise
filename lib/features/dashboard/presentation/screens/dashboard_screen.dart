@@ -215,7 +215,11 @@ class _LoadingState extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Text(
               'Memuat cuaca...',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    height: 1.5,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
@@ -250,7 +254,11 @@ class _ErrorBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                height: 1.43,
                 color: scheme.onErrorContainer,
               ),
             ),
@@ -280,7 +288,12 @@ class _ErrorState extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16,
+                fontWeight: FontWeight.w400,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             FilledButton.icon(

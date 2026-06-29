@@ -27,6 +27,13 @@ class AppTheme {
         height: 1.125,    // 90px / 80px
         letterSpacing: -0.04 * 16, // -0.04em converted to logical px
       ),
+      // Secondary display — used by legacy weather card (now removed, kept for safety).
+      displayMedium: const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 57,
+        fontWeight: FontWeight.w400,
+        height: 1.12,
+      ),
       // headline-lg / headline-lg-mobile — handled by responsive Builder.
       headlineLarge: const TextStyle(
         fontFamily: _fontFamily,
@@ -34,17 +41,45 @@ class AppTheme {
         fontWeight: FontWeight.w600,
         height: 1.25,
       ),
+      // headline-sm — used by metric card values.
+      headlineSmall: const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 24,
+        fontWeight: FontWeight.w400,
+        height: 1.33,
+      ),
       titleMedium: const TextStyle(
         fontFamily: _fontFamily,
         fontSize: 18,
         fontWeight: FontWeight.w600,
         height: 1.333,
       ),
+      // title-sm — used for forecast temperature labels.
+      titleSmall: const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.2,
+      ),
+      // body-lg — used by legacy weather card (now removed, kept for safety).
+      bodyLarge: const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        height: 1.5,
+      ),
       bodyMedium: const TextStyle(
         fontFamily: _fontFamily,
         fontSize: 16,
         fontWeight: FontWeight.w400,
         height: 1.5,
+      ),
+      // body-sm — used by error banners, sidebar rows, etc.
+      bodySmall: const TextStyle(
+        fontFamily: _fontFamily,
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        height: 1.43,
       ),
       // label-sm — all-caps for technical categories per DESIGN.md.
       labelSmall: const TextStyle(
@@ -53,13 +88,6 @@ class AppTheme {
         fontWeight: FontWeight.w500,
         height: 1.333,
         letterSpacing: 0.05 * 12, // 0.05em converted to logical px
-      ),
-      // title-sm — used for forecast temperature labels.
-      titleSmall: const TextStyle(
-        fontFamily: _fontFamily,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        height: 1.2,
       ),
     );
   }
