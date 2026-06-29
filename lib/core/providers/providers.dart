@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../features/shared/data/datasources/cached_weather_entity.dart';
+import '../../features/shared/data/datasources/open_meteo_precipitation_service.dart';
 import '../../features/shared/data/datasources/rainviewer_api_service.dart';
 import '../../features/shared/data/datasources/weather_api_service.dart';
 import '../../features/shared/data/repositories/weather_repository_impl.dart';
@@ -34,6 +35,21 @@ final weatherApiServiceProvider = Provider<WeatherApiService>((ref) {
 final rainViewerApiServiceProvider = Provider<RainViewerApiService>((ref) {
   final dio = ref.watch(rainViewerDioProvider);
   return RainViewerApiService(dio);
+});
+
+/// Dio for Open-Meteo API (no API key, no base URL — full URLs in service).
+final openMeteoDioProvider = Provider<Dio>((ref) {
+  return Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 15),
+  ));
+});
+
+/// Open-Meteo precipitation grid service.
+final openMeteoPrecipitationServiceProvider =
+    Provider<OpenMeteoPrecipitationService>((ref) {
+  final dio = ref.watch(openMeteoDioProvider);
+  return OpenMeteoPrecipitationService(dio);
 });
 
 final cacheBoxProvider = Provider<Box<CachedWeatherEntity>>((ref) {

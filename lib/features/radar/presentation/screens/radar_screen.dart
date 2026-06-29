@@ -5,16 +5,20 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../home/presentation/providers/home_view_model.dart';
-import '../../../shared/data/datasources/bmkg_radar_service.dart';
+import '../../../map/presentation/providers/radar_view_model.dart';
+import '../../../shared/data/datasources/open_meteo_precipitation_service.dart';
 import '../widgets/radar_legend.dart';
+import '../widgets/radar_timeline.dart';
 import '../widgets/radar_zoom_controls.dart';
 
 /// Peta Radar Hujan screen — `/radar` route.
 ///
-/// Uses BMKG radar data (CMAX composite) overlaid on a dark base map.
-/// Data source: https://cuaca.bmkg.go.id/data/public/sidarma/ANIMASI/
+/// Uses Open-Meteo precipitation forecast data rendered as a heatmap
+/// overlay on a dark base map. A 7×7 grid of forecast points is queried
+/// around the user's location, and each cell is colored by precipitation
+/// intensity (mm/h).
 ///
-/// Attribution: BMKG (Badan Meteorologi, Klimatologi, dan Geofisika)
+/// Data source: https://api.open-meteo.com/v1/forecast (no API key needed)
 class RadarScreen extends ConsumerStatefulWidget {
   const RadarScreen({super.key});
 
@@ -24,6 +28,7 @@ class RadarScreen extends ConsumerStatefulWidget {
 
 class _RadarScreenState extends ConsumerState<RadarScreen> {
   final MapController _mapController = MapController();
+  bool _gridLoaded = false;
 
   @override
   void dispose() {
@@ -31,70 +36,97 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
     super.dispose();
   }
 
+  /// Trigger grid loading when weather data becomes available.
+  /// Called from build() because didChangeDependencies fires before
+  /// the cached weather data is loaded from Hive.
+  void _loadGridIfNeeded(LatLng center) {
+    if (_gridLoaded) return;
+    final radarState = ref.read(radarViewModelProvider);
+
+    if (radarState.status == RadarStatus.idle) {
+      _gridLoaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(radarViewModelProvider.notifier).loadGrid(
+              center.latitude,
+              center.longitude,
+            );
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final homeState = ref.watch(homeViewModelProvider);
+    final radarState = ref.watch(radarViewModelProvider);
 
-    // Center the map on the user's current city if known, else Jakarta.
     final center = homeState.weather != null
         ? LatLng(homeState.weather!.lat, homeState.weather!.lon)
         : const LatLng(-6.2088, 106.8456);
 
-    // Find nearest BMKG radar station for the current location.
-    final nearestStation = BmkgRadarStations.nearestTo(
-      center.latitude,
-      center.longitude,
-    );
+    // Trigger grid loading (post-frame to avoid side-effects during build).
+    _loadGridIfNeeded(center);
 
-    return _buildBody(
-      context,
-      center: center,
-      nearestStation: nearestStation,
-    );
+    return _buildBody(context, center: center, radarState: radarState);
   }
 
   Widget _buildBody(
     BuildContext context, {
     required LatLng center,
-    BmkgRadarStation? nearestStation,
+    required RadarState radarState,
   }) {
     final scheme = Theme.of(context).colorScheme;
 
+    // Build heatmap polygons for current frame.
+    final polygons = <Polygon>[];
+    if (radarState.grid != null) {
+      final grid = radarState.grid!;
+      final frameIdx = radarState.currentFrameIndex;
+      // Slight overlap (0.55 × spacing) to avoid gaps between cells.
+      final half = grid.spacing * 0.55;
+
+      for (final cell in grid.cells) {
+        final value =
+            frameIdx < cell.values.length ? cell.values[frameIdx] : 0.0;
+        final color = precipitationColor(value);
+        if (color.alpha == 0) continue; // skip cells with no rain
+
+        polygons.add(Polygon(
+          points: [
+            LatLng(cell.latitude - half, cell.longitude - half),
+            LatLng(cell.latitude - half, cell.longitude + half),
+            LatLng(cell.latitude + half, cell.longitude + half),
+            LatLng(cell.latitude + half, cell.longitude - half),
+          ],
+          color: color,
+          borderColor: Colors.transparent,
+          borderStrokeWidth: 0,
+        ));
+      }
+    }
+
     return Stack(
       children: [
-        // Map fills the entire body.
+        // --- Map ---
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
             initialCenter: center,
-            initialZoom: 5,
+            initialZoom: 6,
             minZoom: 3,
             maxZoom: 18,
-            backgroundColor: const Color(0xFF0B1117), // matches surface dark
+            backgroundColor: const Color(0xFF0B1117),
           ),
           children: [
-            // Dark base map (CartoDB Dark Matter — matches Stitch look).
+            // Dark base map (CartoDB Dark Matter).
             TileLayer(
               urlTemplate:
                   'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png',
               subdomains: const ['a', 'b', 'c', 'd'],
               userAgentPackageName: 'com.weatherwise.flutter',
             ),
-            // BMKG national composite radar overlay.
-            // Animated GIF showing radar reflectivity (dBZ) across Indonesia.
-            // _cacheBustUrl forces re-fetch when user presses refresh.
-            OverlayImageLayer(
-              overlayImages: [
-                OverlayImage(
-                  imageProvider: NetworkImage(
-                    _cacheBustUrl ?? BmkgRadarComposite.url,
-                  ),
-                  bounds: BmkgRadarComposite.bounds,
-                  opacity: 0.75,
-                  gaplessPlayback: true,
-                ),
-              ],
-            ),
+            // Precipitation heatmap overlay.
+            if (polygons.isNotEmpty)
+              PolygonLayer(polygons: polygons),
             // User location marker.
             MarkerLayer(
               markers: [
@@ -110,26 +142,68 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
                 ),
               ],
             ),
-            // Attribution (required by BMKG terms of use).
+            // Attribution.
             RichAttributionWidget(
               attributions: [
-                TextSourceAttribution('BMKG'),
+                TextSourceAttribution('Open-Meteo'),
                 TextSourceAttribution('© OpenStreetMap contributors'),
               ],
             ),
           ],
         ),
 
-        // Top-left: legend overlay.
+        // --- Loading overlay ---
+        if (radarState.status == RadarStatus.loading)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black54,
+              child: Center(
+                child: CircularProgressIndicator(color: scheme.primary),
+              ),
+            ),
+          ),
+
+        // --- Error overlay ---
+        if (radarState.status == RadarStatus.error)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black54,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.error_outline, color: scheme.error, size: 48),
+                    const SizedBox(height: AppSpacing.md),
+                    Text(
+                      'Gagal memuat data curah hujan',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        color: scheme.onSurface,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    ElevatedButton(
+                      onPressed: () {
+                        _gridLoaded = false;
+                        _loadGridIfNeeded(center);
+                      },
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        // --- Legend (top-left) ---
         Positioned(
           top: AppSpacing.md,
           left: AppSpacing.md,
-          child: SafeArea(
-            child: RadarLegend(radarData: null),
-          ),
+          child: SafeArea(child: const RadarLegend()),
         ),
 
-        // Top-right: location + refresh + zoom controls overlay.
+        // --- Controls (top-right) ---
         Positioned(
           top: AppSpacing.md,
           right: AppSpacing.md,
@@ -144,20 +218,12 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
                   child: const Icon(Icons.my_location),
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                // Refresh reloads the radar image (URL is same but content updates).
                 FloatingActionButton.small(
                   heroTag: 'refresh',
-                  tooltip: 'Refresh radar',
-                  onPressed: () {
-                    // Force image re-fetch by changing the ImageProvider.
-                    // Flutter caches network images; to bust cache we use a
-                    // timestamp query parameter.
-                    final cacheBustUrl =
-                        '${BmkgRadarComposite.url}?t=${DateTime.now().millisecondsSinceEpoch}';
-                    setState(() {
-                      _cacheBustUrl = cacheBustUrl;
-                    });
-                  },
+                  tooltip: 'Muat ulang data',
+                  onPressed: () => ref
+                      .read(radarViewModelProvider.notifier)
+                      .loadGrid(center.latitude, center.longitude),
                   child: const Icon(Icons.refresh),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -167,62 +233,22 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
           ),
         ),
 
-        // Bottom-center: station info bar.
-        if (nearestStation != null)
+        // --- Timeline (bottom) ---
+        if (radarState.grid != null &&
+            radarState.status == RadarStatus.success)
           Positioned(
             left: AppSpacing.lg,
             right: AppSpacing.lg,
             bottom: AppSpacing.lg,
             child: SafeArea(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
-                ),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.radar, color: scheme.primary, size: 20),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Text(
-                        'Stasiun Radar: ${nearestStation.name}',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: scheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      'Sumber: BMKG',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
+              child: RadarTimeline(
+                timestamps: radarState.grid!.timestamps,
+                currentIndex: radarState.currentFrameIndex,
+                isPlaying: radarState.isPlaying,
               ),
             ),
           ),
       ],
     );
   }
-
-  /// When non-null, use this cache-busting URL instead of the base URL.
-  String? _cacheBustUrl;
 }

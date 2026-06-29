@@ -4,15 +4,11 @@ import '../../../../core/theme/app_spacing.dart';
 
 /// Legend panel shown in the top-left of the radar map.
 ///
-/// Per Stitch `peta_radar_hujan_fixed_layout`:
-///   - Title: "Intensitas Curah Hujan"
-///   - Horizontal gradient bar (cold -> warm, matching BMKG dBZ scale)
-///   - Three labels: Ringan / Sedang / Lebat
+/// Shows the precipitation intensity color scale (mm/h) with labels:
+/// Ringan / Sedang / Lebat / Sangat Lebat.
+/// Color ramp matches [precipitationColor] in open_meteo_precipitation_service.dart.
 class RadarLegend extends StatelessWidget {
-  const RadarLegend({super.key, this.radarData});
-
-  /// Kept for backward compatibility but no longer used (RainViewer removed).
-  final dynamic radarData;
+  const RadarLegend({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -37,16 +33,16 @@ class RadarLegend extends StatelessWidget {
           Text(
             'Intensitas Curah Hujan',
             style: TextStyle(
-                  fontFamily: 'Inter',
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  height: 1.333,
-                  letterSpacing: 0.05 * 12,
-                  color: scheme.onSurface,
-                ),
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              height: 1.333,
+              letterSpacing: 0.05 * 12,
+              color: scheme.onSurface,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          // Gradient bar matching RainViewer color ramp.
+          // Gradient bar matching precipitationColor ramp.
           Container(
             width: 200,
             height: 8,
@@ -54,10 +50,10 @@ class RadarLegend extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
               gradient: const LinearGradient(
                 colors: [
-                  Color(0xFF4FC3F7), // Ringan — light blue
-                  Color(0xFF66BB6A), // Sedang — green
-                  Color(0xFFFFA726), // Lebat — orange
-                  Color(0xFFE53935), // Sangat lebat — red
+                  Color(0x664FC3F7), // light blue (light rain)
+                  Color(0x9966BB6A), // green (moderate)
+                  Color(0xCCFFA726), // orange (heavy)
+                  Color(0xFFE53935), // red (extreme)
                 ],
               ),
             ),
@@ -71,35 +67,42 @@ class RadarLegend extends StatelessWidget {
                 Text(
                   'Ringan',
                   style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        height: 1.333,
-                        letterSpacing: 0.05 * 12,
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    height: 1.333,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
                 Text(
                   'Sedang',
                   style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        height: 1.333,
-                        letterSpacing: 0.05 * 12,
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    height: 1.333,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
                 Text(
                   'Lebat',
                   style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        height: 1.333,
-                        letterSpacing: 0.05 * 12,
-                        color: scheme.onSurfaceVariant,
-                      ),
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    height: 1.333,
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  'Sngt Lebat',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    height: 1.333,
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
