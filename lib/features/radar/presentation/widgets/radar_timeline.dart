@@ -121,7 +121,7 @@ class _RadarTimelineState extends ConsumerState<RadarTimeline> {
                               height: 1.333,
                               letterSpacing: 0.05 * 12,
                               color: isCurrent
-                                  ? scheme.primaryContainer
+                                  ? scheme.primary
                                   : scheme.onSurfaceVariant,
                             ),
                           );

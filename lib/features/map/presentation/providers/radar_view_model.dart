@@ -83,7 +83,9 @@ class RadarViewModel extends StateNotifier<RadarState> {
     final frames = state.radarData!.radar.pastFrames;
     if (state.currentFrameIndex >= frames.length) return null;
     final frame = frames[state.currentFrameIndex];
-    return 'https://tilecache.rainviewer.com/v2/radar/${frame.path}/256/{z}/{x}/{y}/2/1_1.png';
+    // frame.path already includes the full path (e.g. "/v2/radar/3815517102d2"),
+    // so we append it directly to the host — do NOT prepend "/v2/radar/" again.
+    return 'https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/2/1_1.png';
   }
 }
 
