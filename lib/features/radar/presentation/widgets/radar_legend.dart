@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_spacing.dart';
-import '../../../shared/data/models/rainviewer_model.dart';
 
 /// Legend panel shown in the top-left of the radar map.
 ///
 /// Per Stitch `peta_radar_hujan_fixed_layout`:
 ///   - Title: "Intensitas Curah Hujan"
-///   - Horizontal gradient bar (cold -> warm, matching RainViewer)
+///   - Horizontal gradient bar (cold -> warm, matching BMKG dBZ scale)
 ///   - Three labels: Ringan / Sedang / Lebat
 class RadarLegend extends StatelessWidget {
-  const RadarLegend({super.key, required this.radarData});
+  const RadarLegend({super.key, this.radarData});
 
-  /// Provided so the legend can show "terakhir diperbarui X ago" hint
-  /// in a future iteration; not currently rendered.
-  final RainViewerResponse? radarData;
+  /// Kept for backward compatibility but no longer used (RainViewer removed).
+  final dynamic radarData;
 
   @override
   Widget build(BuildContext context) {
