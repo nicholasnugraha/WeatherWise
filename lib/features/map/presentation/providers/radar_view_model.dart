@@ -48,13 +48,21 @@ class RadarViewModel extends StateNotifier<RadarState> {
   /// Fetch precipitation grid from Open-Meteo around [lat, lon].
   Future<void> loadGrid(double lat, double lon) async {
     state = state.copyWith(status: RadarStatus.loading, errorMessage: null);
+    // Stop any running auto-play timer during reload.
+    _playTimer?.cancel();
+    _playTimer = null;
     try {
       final service = _ref.read(openMeteoPrecipitationServiceProvider);
       final grid = await service.fetchGrid(centerLat: lat, centerLon: lon);
+      // Start at the frame closest to current time so the user sees
+      // "now" precipitation immediately, not midnight (which is usually 0).
+      final initialFrame =
+          PrecipitationGrid.findCurrentFrameIndex(grid.timestamps, DateTime.now());
       state = state.copyWith(
         status: RadarStatus.success,
         grid: grid,
-        currentFrameIndex: 0,
+        currentFrameIndex: initialFrame,
+        isPlaying: false,
       );
     } catch (e) {
       state = state.copyWith(

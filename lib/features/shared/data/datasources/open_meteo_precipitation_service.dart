@@ -44,6 +44,19 @@ class PrecipitationGrid {
       LatLng(centerLat + half, centerLon + half),
     );
   }
+
+  /// Find the frame index closest to [now] (first frame whose
+  /// timestamp is not before [now]). Returns 0 if all frames are
+  /// in the past.
+  static int findCurrentFrameIndex(
+      List<DateTime> timestamps, DateTime now) {
+    for (int i = 0; i < timestamps.length; i++) {
+      if (!timestamps[i].isBefore(now)) {
+        return i;
+      }
+    }
+    return 0;
+  }
 }
 
 /// Maps precipitation intensity (mm/h) to a heatmap color.
@@ -78,6 +91,29 @@ class OpenMeteoPrecipitationService {
 
   OpenMeteoPrecipitationService(this._dio);
 
+  /// Generate grid coordinates around a center point.
+  ///
+  /// Returns (lats, lons, spacing) where lats and lons are parallel
+  /// arrays in row-major order (row 0 = south, row N-1 = north).
+  static (List<double>, List<double>, double) generateGridCoords({
+    required double centerLat,
+    required double centerLon,
+    int gridSize = 7,
+    double coverageDeg = 8.0,
+  }) {
+    final spacing = coverageDeg / (gridSize - 1);
+    final halfExtent = coverageDeg / 2;
+    final lats = <double>[];
+    final lons = <double>[];
+    for (int row = 0; row < gridSize; row++) {
+      for (int col = 0; col < gridSize; col++) {
+        lats.add(centerLat - halfExtent + row * spacing);
+        lons.add(centerLon - halfExtent + col * spacing);
+      }
+    }
+    return (lats, lons, spacing);
+  }
+
   /// Fetch precipitation grid around [centerLat, centerLon].
   ///
   /// [gridSize] points per side (gridSize² total points).
@@ -90,18 +126,12 @@ class OpenMeteoPrecipitationService {
     double coverageDeg = 8.0,
     int forecastDays = 1,
   }) async {
-    final spacing = coverageDeg / (gridSize - 1);
-    final halfExtent = coverageDeg / 2;
-
-    // Generate grid coordinates (row-major: row 0 = south, row N-1 = north).
-    final lats = <double>[];
-    final lons = <double>[];
-    for (int row = 0; row < gridSize; row++) {
-      for (int col = 0; col < gridSize; col++) {
-        lats.add(centerLat - halfExtent + row * spacing);
-        lons.add(centerLon - halfExtent + col * spacing);
-      }
-    }
+    final (lats, lons, spacing) = generateGridCoords(
+      centerLat: centerLat,
+      centerLon: centerLon,
+      gridSize: gridSize,
+      coverageDeg: coverageDeg,
+    );
 
     // Batch query: up to 10 coordinate pairs per API call.
     final allPrecipArrays = <List<double>>[];
