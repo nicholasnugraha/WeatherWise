@@ -1,5 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:weatherwise_flutter/features/shared/data/datasources/open_meteo_precipitation_service.dart';
 
@@ -330,6 +333,160 @@ void main() {
       expect(bounds.north, closeTo(-2.2, 0.01));
       expect(bounds.west, closeTo(102.8, 0.01));
       expect(bounds.east, closeTo(110.8, 0.01));
+    });
+  });
+
+  group('buildHeatmapPolygons', () {
+    /// Helper: build a small 2×2 grid with custom precipitation values.
+    PrecipitationGrid makeGrid(List<List<double>> valuesPerCell,
+        {double centerLat = -6.0, double centerLon = 106.0}) {
+      final (lats, lons, spacing) =
+          OpenMeteoPrecipitationService.generateGridCoords(
+        centerLat: centerLat,
+        centerLon: centerLon,
+        gridSize: 2,
+        coverageDeg: 2.0,
+      );
+      final cells = <PrecipitationCell>[];
+      for (int i = 0; i < lats.length; i++) {
+        cells.add(PrecipitationCell(
+          latitude: lats[i],
+          longitude: lons[i],
+          values: valuesPerCell[i],
+        ));
+      }
+      return PrecipitationGrid(
+        timestamps: List.generate(
+          valuesPerCell.first.length,
+          (i) => DateTime(2026, 7, 1, i),
+        ),
+        cells: cells,
+        gridSize: 2,
+        centerLat: centerLat,
+        centerLon: centerLon,
+        spacing: spacing,
+      );
+    }
+
+    test('returns empty list when all cells have 0 precipitation', () {
+      final grid = makeGrid([
+        [0.0, 0.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+      ]);
+      final polygons = buildHeatmapPolygons(grid: grid, frameIndex: 0);
+      expect(polygons, isEmpty);
+    });
+
+    test('returns polygons only for cells with precipitation >= 0.1', () {
+      final grid = makeGrid([
+        [0.0, 5.0], // cell 0: no rain at frame 0, rain at frame 1
+        [0.05, 0.05], // cell 1: below threshold (0.05 < 0.1)
+        [3.0, 0.0], // cell 2: rain at frame 0
+        [0.0, 0.0], // cell 3: no rain
+      ]);
+      // Frame 0: only cell 2 has rain (3.0 mm/h)
+      final polygons0 = buildHeatmapPolygons(grid: grid, frameIndex: 0);
+      expect(polygons0.length, equals(1));
+
+      // Frame 1: only cell 0 has rain (5.0 mm/h)
+      final polygons1 = buildHeatmapPolygons(grid: grid, frameIndex: 1);
+      expect(polygons1.length, equals(1));
+    });
+
+    test('all polygons have isFilled = true (flutter_map 6.x fix)', () {
+      // This is the regression test for the root cause bug:
+      // Polygon.color was set but isFilled defaulted to false,
+      // so PolygonPainter never drew the fill → invisible heatmap.
+      final grid = makeGrid([
+        [5.0, 10.0],
+        [0.5, 2.0],
+        [0.1, 0.0],
+        [0.0, 25.0],
+      ]);
+      final polygons = buildHeatmapPolygons(grid: grid, frameIndex: 0);
+      expect(polygons, isNotEmpty);
+      for (final p in polygons) {
+        expect(p.isFilled, isTrue,
+            reason: 'Polygon must have isFilled=true to be visible in flutter_map 6.x');
+      }
+    });
+
+    test('polygon color matches precipitationColor for each value', () {
+      final grid = makeGrid([
+        [0.5, 0.0],
+        [5.0, 0.0],
+        [15.0, 0.0],
+        [25.0, 0.0],
+      ]);
+      final polygons = buildHeatmapPolygons(grid: grid, frameIndex: 0);
+      expect(polygons.length, equals(4));
+
+      final expectedColors = [
+        precipitationColor(0.5),
+        precipitationColor(5.0),
+        precipitationColor(15.0),
+        precipitationColor(25.0),
+      ];
+      for (int i = 0; i < polygons.length; i++) {
+        expect(polygons[i].color, equals(expectedColors[i]));
+      }
+    });
+
+    test('polygon coordinates form a square around cell center', () {
+      final grid = makeGrid([
+        [5.0, 0.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+      ]);
+      final polygons = buildHeatmapPolygons(grid: grid, frameIndex: 0);
+      expect(polygons.length, equals(1));
+
+      final cell = grid.cells[0];
+      final half = grid.spacing * 0.55;
+      final pts = polygons[0].points;
+
+      expect(pts.length, equals(4));
+      // SW corner
+      expect(pts[0].latitude, closeTo(cell.latitude - half, 0.0001));
+      expect(pts[0].longitude, closeTo(cell.longitude - half, 0.0001));
+      // SE corner
+      expect(pts[1].latitude, closeTo(cell.latitude - half, 0.0001));
+      expect(pts[1].longitude, closeTo(cell.longitude + half, 0.0001));
+      // NE corner
+      expect(pts[2].latitude, closeTo(cell.latitude + half, 0.0001));
+      expect(pts[2].longitude, closeTo(cell.longitude + half, 0.0001));
+      // NW corner
+      expect(pts[3].latitude, closeTo(cell.latitude + half, 0.0001));
+      expect(pts[3].longitude, closeTo(cell.longitude - half, 0.0001));
+    });
+
+    test('handles frameIndex out of bounds gracefully', () {
+      final grid = makeGrid([
+        [5.0, 3.0], // 2 values per cell
+        [5.0, 3.0],
+        [5.0, 3.0],
+        [5.0, 3.0],
+      ]);
+      // frameIndex 5 is out of bounds (only 2 values) → value defaults to 0.0
+      // → all cells transparent → empty list
+      final polygons = buildHeatmapPolygons(grid: grid, frameIndex: 5);
+      expect(polygons, isEmpty);
+    });
+
+    test('polygons have transparent border and zero border width', () {
+      final grid = makeGrid([
+        [5.0, 0.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+        [0.0, 0.0],
+      ]);
+      final polygons = buildHeatmapPolygons(grid: grid, frameIndex: 0);
+      expect(polygons.length, equals(1));
+      expect(polygons[0].borderColor, equals(const Color(0x00000000)));
+      expect(polygons[0].borderStrokeWidth, equals(0));
     });
   });
 }

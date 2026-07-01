@@ -59,6 +59,48 @@ class PrecipitationGrid {
   }
 }
 
+/// Build heatmap polygons for a single frame of the precipitation grid.
+///
+/// Returns one [Polygon] per cell whose precipitation at [frameIndex]
+/// is ≥ 0.1 mm/h. Each polygon is a square centred on the cell's
+/// coordinates, sized to slightly overlap neighbours (0.55 × spacing)
+/// to avoid visible gaps. All polygons are filled (`isFilled: true`)
+/// with the colour from [precipitationColor].
+///
+/// Extracted from the widget so it can be unit-tested without a
+/// live Flutter binding or map camera.
+List<Polygon> buildHeatmapPolygons({
+  required PrecipitationGrid grid,
+  required int frameIndex,
+}) {
+  final polygons = <Polygon>[];
+  final half = grid.spacing * 0.55;
+
+  for (final cell in grid.cells) {
+    final value =
+        frameIndex < cell.values.length ? cell.values[frameIndex] : 0.0;
+    final color = precipitationColor(value);
+    if (color.alpha == 0) continue; // skip cells with no rain
+
+    polygons.add(Polygon(
+      points: [
+        LatLng(cell.latitude - half, cell.longitude - half),
+        LatLng(cell.latitude - half, cell.longitude + half),
+        LatLng(cell.latitude + half, cell.longitude + half),
+        LatLng(cell.latitude + half, cell.longitude - half),
+      ],
+      color: color,
+      // flutter_map 6.x: color alone does NOT fill a polygon.
+      // isFilled must be true for PolygonPainter to draw the fill.
+      isFilled: true,
+      borderColor: const Color(0x00000000), // transparent
+      borderStrokeWidth: 0,
+    ));
+  }
+
+  return polygons;
+}
+
 /// Maps precipitation intensity (mm/h) to a heatmap color.
 ///
 /// Scale follows standard precipitation categories:

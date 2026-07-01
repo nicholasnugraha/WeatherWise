@@ -79,29 +79,10 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
     // Build heatmap polygons for current frame.
     final polygons = <Polygon>[];
     if (radarState.grid != null) {
-      final grid = radarState.grid!;
-      final frameIdx = radarState.currentFrameIndex;
-      // Slight overlap (0.55 × spacing) to avoid gaps between cells.
-      final half = grid.spacing * 0.55;
-
-      for (final cell in grid.cells) {
-        final value =
-            frameIdx < cell.values.length ? cell.values[frameIdx] : 0.0;
-        final color = precipitationColor(value);
-        if (color.alpha == 0) continue; // skip cells with no rain
-
-        polygons.add(Polygon(
-          points: [
-            LatLng(cell.latitude - half, cell.longitude - half),
-            LatLng(cell.latitude - half, cell.longitude + half),
-            LatLng(cell.latitude + half, cell.longitude + half),
-            LatLng(cell.latitude + half, cell.longitude - half),
-          ],
-          color: color,
-          borderColor: Colors.transparent,
-          borderStrokeWidth: 0,
-        ));
-      }
+      polygons.addAll(buildHeatmapPolygons(
+        grid: radarState.grid!,
+        frameIndex: radarState.currentFrameIndex,
+      ));
     }
 
     return Stack(
