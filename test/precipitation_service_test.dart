@@ -133,6 +133,21 @@ void main() {
         expect(lons.length, equals(size * size));
       }
     });
+
+    test('default parameters produce 9×9 grid with 2° coverage', () {
+      // Verify the focused city grid: 81 points, ~28 km spacing
+      final (lats, lons, spacing) =
+          OpenMeteoPrecipitationService.generateGridCoords(
+        centerLat: -6.2,
+        centerLon: 106.8,
+      );
+      expect(lats.length, equals(81)); // 9×9
+      expect(lons.length, equals(81));
+      expect(spacing, closeTo(2.0 / 8.0, 0.0001)); // 0.25°
+      // 0.25° × 111 km/° ≈ 28 km per cell
+      expect(spacing * 111, lessThan(30)); // under 30 km
+      expect(spacing * 111, greaterThan(27)); // over 27 km
+    });
   });
 
   group('PrecipitationGrid.findCurrentFrameIndex', () {
@@ -314,6 +329,18 @@ void main() {
       verify(() => mockDio.get(any(),
               queryParameters: any(named: 'queryParameters')))
           .called(5);
+    });
+
+    test('default parameters make 9 batch calls for 9×9 grid', () async {
+      setupMockDio(precipPerCell: [0.0]);
+
+      final service = OpenMeteoPrecipitationService(mockDio);
+      await service.fetchGrid(centerLat: 0, centerLon: 0);
+
+      // 81 points / 10 per batch = 9 calls
+      verify(() => mockDio.get(any(),
+              queryParameters: any(named: 'queryParameters')))
+          .called(9);
     });
   });
 

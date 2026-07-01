@@ -92,7 +92,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
           mapController: _mapController,
           options: MapOptions(
             initialCenter: center,
-            initialZoom: 6,
+            initialZoom: 9,
             minZoom: 3,
             maxZoom: 18,
             backgroundColor: const Color(0xFF0B1117),
@@ -195,7 +195,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
                 FloatingActionButton.small(
                   heroTag: 'location',
                   tooltip: 'Lokasi saya',
-                  onPressed: () => _mapController.move(center, 8),
+                  onPressed: () => _mapController.move(center, 10),
                   child: const Icon(Icons.my_location),
                 ),
                 const SizedBox(height: AppSpacing.sm),

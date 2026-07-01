@@ -137,11 +137,15 @@ class OpenMeteoPrecipitationService {
   ///
   /// Returns (lats, lons, spacing) where lats and lons are parallel
   /// arrays in row-major order (row 0 = south, row N-1 = north).
+  ///
+  /// Default: 9×9 grid over 2° (~222 km) → ~28 km per cell.
+  /// This focuses on the city + immediate surroundings for better
+  /// local forecast accuracy than a wide regional grid.
   static (List<double>, List<double>, double) generateGridCoords({
     required double centerLat,
     required double centerLon,
-    int gridSize = 7,
-    double coverageDeg = 8.0,
+    int gridSize = 9,
+    double coverageDeg = 2.0,
   }) {
     final spacing = coverageDeg / (gridSize - 1);
     final halfExtent = coverageDeg / 2;
@@ -161,11 +165,14 @@ class OpenMeteoPrecipitationService {
   /// [gridSize] points per side (gridSize² total points).
   /// [coverageDeg] total degrees covered in each direction.
   /// [forecastDays] number of days of forecast (1=24h, 2=48h).
+  ///
+  /// Default: 9×9 grid over 2° (~222 km²) → ~28 km/cell.
+  /// Focused on city area for better local accuracy.
   Future<PrecipitationGrid> fetchGrid({
     required double centerLat,
     required double centerLon,
-    int gridSize = 7,
-    double coverageDeg = 8.0,
+    int gridSize = 9,
+    double coverageDeg = 2.0,
     int forecastDays = 1,
   }) async {
     final (lats, lons, spacing) = generateGridCoords(
