@@ -32,15 +32,20 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
     final homeState = ref.read(homeViewModelProvider);
     final forecastState = ref.read(forecastViewModelProvider);
 
-    // Skip if already loading or loaded successfully.
+    // Skip if already loading.
     if (forecastState.status == ForecastStatus.loading) return;
-    if (forecastState.status == ForecastStatus.success &&
-        forecastState.forecast != null) {
-      return;
-    }
 
     final lat = homeState.weather?.lat ?? _fallbackLat;
     final lon = homeState.weather?.lon ?? _fallbackLon;
+
+    // If already loaded for the same coordinates, don't reload.
+    final loadedForSameCoords =
+        forecastState.status == ForecastStatus.success &&
+            forecastState.forecast != null &&
+            (forecastState.lat == lat && forecastState.lon == lon);
+
+    if (loadedForSameCoords) return;
+
     ref.read(forecastViewModelProvider.notifier).loadForecast(lat, lon);
   }
 

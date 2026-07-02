@@ -49,10 +49,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   void _maybeLoadForecast(double lat, double lon) {
     final forecastState = ref.read(forecastViewModelProvider);
     if (forecastState.status == ForecastStatus.loading) return;
-    if (forecastState.status == ForecastStatus.success &&
-        forecastState.forecast != null) {
-      return;
-    }
+
+    // Reload if cached forecast belongs to a different location.
+    final loadedForSameCoords =
+        forecastState.status == ForecastStatus.success &&
+            forecastState.forecast != null &&
+            (forecastState.lat == lat && forecastState.lon == lon);
+
+    if (loadedForSameCoords) return;
+
     ref.read(forecastViewModelProvider.notifier).loadForecast(lat, lon);
   }
 

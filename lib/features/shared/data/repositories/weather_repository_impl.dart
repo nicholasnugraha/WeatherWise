@@ -20,6 +20,15 @@ class WeatherRepositoryImpl implements WeatherRepository {
   })  : _apiService = apiService,
         _cacheBox = cacheBox;
 
+  /// Single cache key for the full OneCall payload.
+  /// Dashboard (current weather) and Forecast (daily/hourly) derive data
+  /// from the SAME response, so they MUST share one cache entry.
+  /// This guarantees dashboard and forecast are always in sync for the
+  /// same coordinates.
+  String _oneCallCacheKey(double lat, double lon) {
+    return 'onecall_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+  }
+
   @override
   Future<CurrentWeather> getCurrentWeatherByCity(String cityName) async {
     // 1. Resolve city -> coordinates via geocoding
@@ -72,16 +81,15 @@ class WeatherRepositoryImpl implements WeatherRepository {
   }
 
   /// Internal: fetch OneCall and build CurrentWeather entity.
-  /// Caches the full OneCall response so that subsequent getForecast() can
-  /// derive hourly + daily from the SAME cached payload (single network round-trip
-  /// per cache window).
+  /// Caches the full OneCall response so that getForecast() and
+  /// getHourlyForecast() derive data from the SAME payload.
   Future<CurrentWeather> _getCurrentWeatherByCoordInternal({
     required double lat,
     required double lon,
     String? cityName,
     String? country,
   }) async {
-    final cacheKey = 'coord_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+    final cacheKey = _oneCallCacheKey(lat, lon);
     final cached = _cacheBox.get(cacheKey);
 
     OneCallResponse oneCall;
@@ -97,20 +105,6 @@ class WeatherRepositoryImpl implements WeatherRepository {
         cacheKey,
         CachedWeatherEntity(
           locationKey: cacheKey,
-          weatherJson: jsonEncode(oneCall.toJson()),
-          timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        ),
-      );
-    }
-
-    // Also pre-populate the forecast cache with the same payload so that
-    // getForecast() can be served from cache without another network call.
-    final forecastKey = 'forecast_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
-    if (_cacheBox.get(forecastKey) == null) {
-      await _cacheBox.put(
-        forecastKey,
-        CachedWeatherEntity(
-          locationKey: forecastKey,
           weatherJson: jsonEncode(oneCall.toJson()),
           timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
         ),
@@ -122,57 +116,42 @@ class WeatherRepositoryImpl implements WeatherRepository {
 
   @override
   Future<Forecast> getForecast(double lat, double lon) async {
-    final cacheKey = 'forecast_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
-    final cached = _cacheBox.get(cacheKey);
-
-    OneCallResponse oneCall;
-    if (cached != null && !cached.isExpired) {
-      oneCall = OneCallResponse.fromJson(jsonDecode(cached.weatherJson));
-    } else {
-      oneCall = await _apiService.getOneCall(
-        latitude: lat,
-        longitude: lon,
-        apiKey: ApiConfig.apiKey,
-      );
-      await _cacheBox.put(
-        cacheKey,
-        CachedWeatherEntity(
-          locationKey: cacheKey,
-          weatherJson: jsonEncode(oneCall.toJson()),
-          timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        ),
-      );
-    }
-
+    final oneCall = await _getOneCallCached(lat, lon);
     return _mapOneCallToForecast(oneCall);
   }
 
   /// Lightweight forecast summary: just the first 24 hourly entries.
-  /// Uses the same cached OneCall payload as getForecast() — no extra call.
+  /// Uses the same shared OneCall cache as current weather and daily forecast.
   Future<Forecast> getHourlyForecast(double lat, double lon) async {
-    final cacheKey = 'forecast_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+    final oneCall = await _getOneCallCached(lat, lon);
+    return _mapOneCallToHourly(oneCall);
+  }
+
+  /// Shared OneCall fetch/parse with unified cache key.
+  /// Dashboard, 7-day forecast, and hourly forecast all read from the same
+  /// cached payload to guarantee data consistency.
+  Future<OneCallResponse> _getOneCallCached(double lat, double lon) async {
+    final cacheKey = _oneCallCacheKey(lat, lon);
     final cached = _cacheBox.get(cacheKey);
 
-    OneCallResponse oneCall;
     if (cached != null && !cached.isExpired) {
-      oneCall = OneCallResponse.fromJson(jsonDecode(cached.weatherJson));
-    } else {
-      oneCall = await _apiService.getOneCall(
-        latitude: lat,
-        longitude: lon,
-        apiKey: ApiConfig.apiKey,
-      );
-      await _cacheBox.put(
-        cacheKey,
-        CachedWeatherEntity(
-          locationKey: cacheKey,
-          weatherJson: jsonEncode(oneCall.toJson()),
-          timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        ),
-      );
+      return OneCallResponse.fromJson(jsonDecode(cached.weatherJson));
     }
 
-    return _mapOneCallToHourly(oneCall);
+    final oneCall = await _apiService.getOneCall(
+      latitude: lat,
+      longitude: lon,
+      apiKey: ApiConfig.apiKey,
+    );
+    await _cacheBox.put(
+      cacheKey,
+      CachedWeatherEntity(
+        locationKey: cacheKey,
+        weatherJson: jsonEncode(oneCall.toJson()),
+        timestamp: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      ),
+    );
+    return oneCall;
   }
 
   @override
