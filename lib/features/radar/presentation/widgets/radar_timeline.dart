@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../map/presentation/providers/radar_view_model.dart';
 
@@ -82,7 +83,9 @@ class _RadarTimelineState extends ConsumerState<RadarTimeline> {
               ),
               onPressed: () =>
                   ref.read(radarViewModelProvider.notifier).togglePlay(),
-              tooltip: widget.isPlaying ? 'Jeda' : 'Putar',
+              tooltip: widget.isPlaying
+                  ? AppLocalizations.of(context).radarPause
+                  : AppLocalizations.of(context).radarPlay,
             ),
           ),
           const SizedBox(width: AppSpacing.md),

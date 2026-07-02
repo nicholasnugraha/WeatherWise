@@ -6,6 +6,7 @@ import '../../features/dashboard/presentation/screens/dashboard_screen.dart';
 import '../../features/forecast/presentation/screens/forecast_screen.dart';
 import '../../features/radar/presentation/screens/radar_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../localization/app_localizations.dart';
 import '../widgets/app_shell.dart';
 import 'routes.dart';
 
@@ -57,21 +58,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-    errorBuilder: (context, state) => Scaffold(
-      appBar: AppBar(title: const Text('Tidak ditemukan')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Halaman yang kamu cari tidak ada.'),
-            const SizedBox(height: 16),
-            FilledButton(
-              onPressed: () => context.go(Routes.dashboard),
-              child: const Text('Kembali ke Dashboard'),
-            ),
-          ],
+    errorBuilder: (context, state) {
+      final l10n = AppLocalizations.of(context);
+      return Scaffold(
+        appBar: AppBar(title: Text(l10n.notFoundTitle)),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.notFoundMessage),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => context.go(Routes.dashboard),
+                child: Text(l10n.backToDashboard),
+              ),
+            ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 });

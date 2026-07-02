@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/responsive/breakpoints.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../forecast/presentation/providers/forecast_view_model.dart';
 import '../../../home/presentation/providers/home_view_model.dart';
+import '../../../settings/presentation/providers/settings_view_model.dart';
 import '../utils/metric_formatters.dart';
 import '../widgets/dashboard_hero_card.dart';
 import '../widgets/dashboard_search_bar.dart';
@@ -31,8 +33,6 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  static const _defaultCity = 'Jakarta';
-
   @override
   void initState() {
     super.initState();
@@ -40,7 +40,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       final homeState = ref.read(homeViewModelProvider);
       // Only auto-load on first visit (idle) — preserve user's last city.
       if (homeState.status == HomeStatus.idle) {
-        ref.read(homeViewModelProvider.notifier).loadWeatherByCity(_defaultCity);
+        final defaultCity = ref.read(settingsViewModelProvider).settings.defaultCity;
+        ref.read(homeViewModelProvider.notifier).loadWeatherByCity(defaultCity);
       }
       // Forecast loads after home weather resolves (city coords needed).
     });
@@ -102,7 +103,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             forecastState: forecastState,
             isDesktop: isDesktop,
             onRetry: () {
-              ref.read(homeViewModelProvider.notifier).loadWeatherByCity(_defaultCity);
+              final defaultCity = ref.read(settingsViewModelProvider).settings.defaultCity;
+              ref.read(homeViewModelProvider.notifier).loadWeatherByCity(defaultCity);
             },
           ),
         );
@@ -304,7 +306,7 @@ class _ErrorState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Coba Lagi'),
+              label: Text(AppLocalizations.of(context).retry),
             ),
           ],
         ),

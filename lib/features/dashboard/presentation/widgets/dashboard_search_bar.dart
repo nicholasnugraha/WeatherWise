@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/providers/providers.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../home/presentation/providers/home_view_model.dart';
@@ -107,6 +108,7 @@ class _DashboardSearchBarState extends ConsumerState<DashboardSearchBar> {
     final state = ref.watch(homeViewModelProvider);
     final isLoading = state.status == HomeStatus.loading;
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -120,7 +122,7 @@ class _DashboardSearchBarState extends ConsumerState<DashboardSearchBar> {
           onSubmitted: _submit,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
-            hintText: 'Cari kota...',
+            hintText: l10n.searchHint,
             prefixIcon: Icon(
               Icons.search,
               color: scheme.onSurfaceVariant,

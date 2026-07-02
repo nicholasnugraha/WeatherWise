@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/responsive/breakpoints.dart';
 import '../../../../core/theme/app_spacing.dart';
-import '../../../shared/domain/entities/forecast.dart';
-import '../../presentation/providers/forecast_view_model.dart';
 import '../../../home/presentation/providers/home_view_model.dart';
+import '../../../shared/domain/entities/forecast.dart';
+import '../providers/forecast_view_model.dart';
 import '../widgets/daily_forecast_card.dart';
 
 /// Prakiraan Cuaca screen — `/forecast` route.
@@ -71,6 +72,7 @@ class _ForecastScreenState extends ConsumerState<ForecastScreen> {
     final state = ref.watch(forecastViewModelProvider);
     final homeState = ref.watch(homeViewModelProvider);
     final cityName = homeState.weather?.cityName ?? 'Jakarta';
+    final l10n = AppLocalizations.of(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -177,10 +179,11 @@ class _ForecastList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (entries.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-        child: Center(child: Text('Tidak ada data prakiraan.')),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+        child: Center(child: Text(l10n.noForecastData)),
       );
     }
 
@@ -222,6 +225,7 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
       child: Column(
@@ -231,7 +235,7 @@ class _LoadingState extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'Memuat prakiraan...',
+            l10n.loadingForecast,
             style: TextStyle(
               fontFamily: 'Inter',
               fontSize: 16,
@@ -272,10 +276,10 @@ class _ErrorState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          FilledButton.icon(
+          TextButton.icon(
             onPressed: onRetry,
             icon: const Icon(Icons.refresh),
-            label: const Text('Coba Lagi'),
+            label: Text(AppLocalizations.of(context).retry),
           ),
         ],
       ),

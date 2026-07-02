@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../home/presentation/providers/home_view_model.dart';
 import '../../../map/presentation/providers/radar_view_model.dart';
@@ -75,6 +76,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
     required RadarState radarState,
   }) {
     final scheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     // Build heatmap polygons for current frame.
     final polygons = <Polygon>[];
@@ -156,7 +158,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
                     Icon(Icons.error_outline, color: scheme.error, size: 48),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Gagal memuat data curah hujan',
+                      l10n.errorGeneric,
                       style: TextStyle(
                         fontFamily: 'Inter',
                         color: scheme.onSurface,
@@ -169,7 +171,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
                         _gridLoaded = false;
                         _loadGridIfNeeded(center);
                       },
-                      child: const Text('Coba Lagi'),
+                      child: Text(l10n.retry),
                     ),
                   ],
                 ),
@@ -194,14 +196,14 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
               children: [
                 FloatingActionButton.small(
                   heroTag: 'location',
-                  tooltip: 'Lokasi saya',
+                  tooltip: l10n.radarMyLocation,
                   onPressed: () => _mapController.move(center, 10),
                   child: const Icon(Icons.my_location),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 FloatingActionButton.small(
                   heroTag: 'refresh',
-                  tooltip: 'Muat ulang data',
+                  tooltip: l10n.radarReload,
                   onPressed: () => ref
                       .read(radarViewModelProvider.notifier)
                       .loadGrid(center.latitude, center.longitude),

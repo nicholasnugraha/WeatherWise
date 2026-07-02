@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../localization/app_localizations.dart';
 import '../responsive/breakpoints.dart';
 import '../responsive/responsive_builder.dart';
 import '../routing/routes.dart';
@@ -12,7 +14,7 @@ import '../theme/app_spacing.dart';
 /// - Mobile: BottomNavigationBar at the bottom
 ///
 /// The brand mark and Settings entry live in the NavigationRail (desktop only).
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({
     super.key,
     required this.child,
@@ -23,32 +25,32 @@ class AppShell extends StatelessWidget {
   final String currentLocation;
 
   // ---------------------------------------------------------------------------
-  // Navigation destinations (single source of truth — used by both rail + bar)
+  // Navigation destinations — labels are localized via AppLocalizations.
   // ---------------------------------------------------------------------------
 
-  static const _destinations = <_NavDest>[
-    _NavDest(
-      label: 'Dashboard',
-      icon: Icons.dashboard_outlined,
-      selectedIcon: Icons.dashboard,
-      route: Routes.dashboard,
-    ),
-    _NavDest(
-      label: 'Prakiraan',
-      icon: Icons.cloud_outlined,
-      selectedIcon: Icons.cloud,
-      route: Routes.forecast,
-    ),
-    _NavDest(
-      label: 'Peta Radar',
-      icon: Icons.map_outlined,
-      selectedIcon: Icons.map,
-      route: Routes.radar,
-    ),
-  ];
+  List<_NavDest> _destinations(AppLocalizations l10n) => [
+        _NavDest(
+          label: l10n.navDashboard,
+          icon: Icons.dashboard_outlined,
+          selectedIcon: Icons.dashboard,
+          route: Routes.dashboard,
+        ),
+        _NavDest(
+          label: l10n.navForecast,
+          icon: Icons.cloud_outlined,
+          selectedIcon: Icons.cloud,
+          route: Routes.forecast,
+        ),
+        _NavDest(
+          label: l10n.navRadar,
+          icon: Icons.map_outlined,
+          selectedIcon: Icons.map,
+          route: Routes.radar,
+        ),
+      ];
 
-  int get _selectedIndex {
-    final i = _destinations.indexWhere((d) => d.route == currentLocation);
+  int _selectedIndex(List<_NavDest> destinations) {
+    final i = destinations.indexWhere((d) => d.route == currentLocation);
     return i < 0 ? 0 : i;
   }
 
@@ -62,8 +64,9 @@ class AppShell extends StatelessWidget {
   // Layouts
   // ---------------------------------------------------------------------------
 
-  Widget _desktopSidebar(BuildContext context) {
+  Widget _desktopSidebar(BuildContext context, AppLocalizations l10n) {
     final scheme = Theme.of(context).colorScheme;
+    final destinations = _destinations(l10n);
     return Container(
       width: LayoutSizes.sidebar,
       color: Theme.of(context).navigationRailTheme.backgroundColor,
@@ -113,7 +116,7 @@ class AppShell extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           // Nav items
-          ..._destinations.map(
+          ...destinations.map(
             (d) => _NavRailItem(
               dest: d,
               selected: currentLocation == d.route,
@@ -126,8 +129,8 @@ class AppShell extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: _NavRailItem(
-              dest: const _NavDest(
-                label: 'Pengaturan',
+              dest: _NavDest(
+                label: l10n.navSettings,
                 icon: Icons.settings_outlined,
                 selectedIcon: Icons.settings,
                 route: Routes.settings,
@@ -142,12 +145,13 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  Widget _tabletRail(BuildContext context) {
+  Widget _tabletRail(BuildContext context, AppLocalizations l10n) {
+    final destinations = _destinations(l10n);
     return NavigationRail(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (i) => _go(context, _destinations[i]),
+      selectedIndex: _selectedIndex(destinations),
+      onDestinationSelected: (i) => _go(context, destinations[i]),
       labelType: NavigationRailLabelType.all,
-      destinations: _destinations
+      destinations: destinations
           .map(
             (d) => NavigationRailDestination(
               icon: Icon(d.icon),
@@ -159,11 +163,12 @@ class AppShell extends StatelessWidget {
     );
   }
 
-  Widget _mobileBottomBar(BuildContext context) {
+  Widget _mobileBottomBar(BuildContext context, AppLocalizations l10n) {
+    final destinations = _destinations(l10n);
     return NavigationBar(
-      selectedIndex: _selectedIndex,
-      onDestinationSelected: (i) => _go(context, _destinations[i]),
-      destinations: _destinations
+      selectedIndex: _selectedIndex(destinations),
+      onDestinationSelected: (i) => _go(context, destinations[i]),
+      destinations: destinations
           .map(
             (d) => NavigationDestination(
               icon: Icon(d.icon),
@@ -176,16 +181,17 @@ class AppShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     return ResponsiveBuilder(
       mobile: (_) => Scaffold(
         body: child,
-        bottomNavigationBar: _mobileBottomBar(context),
+        bottomNavigationBar: _mobileBottomBar(context, l10n),
       ),
       tablet: (_) => Scaffold(
         body: Row(
           children: [
-            _tabletRail(context),
+            _tabletRail(context, l10n),
             const VerticalDivider(width: 1),
             Expanded(child: child),
           ],
@@ -194,7 +200,7 @@ class AppShell extends StatelessWidget {
       desktop: (_) => Scaffold(
         body: Row(
           children: [
-            _desktopSidebar(context),
+            _desktopSidebar(context, l10n),
             const VerticalDivider(width: 1),
             Expanded(child: child),
           ],
