@@ -145,8 +145,20 @@ class AppShell extends ConsumerWidget {
     );
   }
 
+  /// Destinations including Settings — used by tablet rail and mobile bar
+  /// where Settings is shown inline (no separate bottom button like desktop).
+  List<_NavDest> _destinationsWithSettings(AppLocalizations l10n) => [
+        ..._destinations(l10n),
+        _NavDest(
+          label: l10n.navSettings,
+          icon: Icons.settings_outlined,
+          selectedIcon: Icons.settings,
+          route: Routes.settings,
+        ),
+      ];
+
   Widget _tabletRail(BuildContext context, AppLocalizations l10n) {
-    final destinations = _destinations(l10n);
+    final destinations = _destinationsWithSettings(l10n);
     return NavigationRail(
       selectedIndex: _selectedIndex(destinations),
       onDestinationSelected: (i) => _go(context, destinations[i]),
@@ -164,7 +176,7 @@ class AppShell extends ConsumerWidget {
   }
 
   Widget _mobileBottomBar(BuildContext context, AppLocalizations l10n) {
-    final destinations = _destinations(l10n);
+    final destinations = _destinationsWithSettings(l10n);
     return NavigationBar(
       selectedIndex: _selectedIndex(destinations),
       onDestinationSelected: (i) => _go(context, destinations[i]),
