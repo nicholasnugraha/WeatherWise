@@ -66,22 +66,23 @@ class _RadarTimelineState extends ConsumerState<RadarTimeline> {
       child: Row(
         children: [
           // Play / Pause button
-          Material(
-            color: scheme.primaryContainer,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () =>
-                  ref.read(radarViewModelProvider.notifier).togglePlay(),
-              child: SizedBox(
-                width: 36,
-                height: 36,
-                child: Icon(
-                  widget.isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: scheme.onPrimaryContainer,
-                  size: 20,
-                ),
+          // Use IconButton inside a circular Container instead of
+          // Material+InkWell. The previous implementation could render an
+          // empty circle on Flutter web (ink splash clipped the child icon).
+          Container(
+            decoration: BoxDecoration(
+              color: scheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(
+                widget.isPlaying ? Icons.pause : Icons.play_arrow,
+                color: scheme.onPrimaryContainer,
+                size: 20,
               ),
+              onPressed: () =>
+                  ref.read(radarViewModelProvider.notifier).togglePlay(),
+              tooltip: widget.isPlaying ? 'Jeda' : 'Putar',
             ),
           ),
           const SizedBox(width: AppSpacing.md),
