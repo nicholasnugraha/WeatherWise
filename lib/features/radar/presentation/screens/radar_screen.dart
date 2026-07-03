@@ -29,7 +29,7 @@ class RadarScreen extends ConsumerStatefulWidget {
 
 class _RadarScreenState extends ConsumerState<RadarScreen> {
   final MapController _mapController = MapController();
-  bool _gridLoaded = false;
+  LatLng? _lastLoadedCenter;
 
   @override
   void dispose() {
@@ -37,22 +37,32 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
     super.dispose();
   }
 
-  /// Trigger grid loading when weather data becomes available.
-  /// Called from build() because didChangeDependencies fires before
-  /// the cached weather data is loaded from Hive.
+  /// Trigger grid loading when weather data becomes available or city changes.
+  ///
+  /// Previously used a `_gridLoaded` boolean flag that prevented the grid
+  /// from reloading when the user searched a new city (e.g. via Dashboard
+  /// search). The grid was stuck at the default location because:
+  ///   1. `_gridLoaded` was never reset, so `_loadGridIfNeeded` returned early.
+  ///   2. The `RadarStatus.idle` check also blocked reloads — the ViewModel's
+  ///      status stays at `success` after the first load, never going back
+  ///      to `idle`.
+  ///
+  /// Fix: track the last loaded center. Reload whenever the center changes
+  /// (new city) OR when no grid has been loaded yet.
   void _loadGridIfNeeded(LatLng center) {
-    if (_gridLoaded) return;
-    final radarState = ref.read(radarViewModelProvider);
-
-    if (radarState.status == RadarStatus.idle) {
-      _gridLoaded = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(radarViewModelProvider.notifier).loadGrid(
-              center.latitude,
-              center.longitude,
-            );
-      });
+    // Skip if we already loaded for this exact center (within ~1m tolerance).
+    if (_lastLoadedCenter != null &&
+        (_lastLoadedCenter!.latitude - center.latitude).abs() < 0.0001 &&
+        (_lastLoadedCenter!.longitude - center.longitude).abs() < 0.0001) {
+      return;
     }
+    _lastLoadedCenter = center;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(radarViewModelProvider.notifier).loadGrid(
+            center.latitude,
+            center.longitude,
+          );
+    });
   }
 
   @override
@@ -168,7 +178,7 @@ class _RadarScreenState extends ConsumerState<RadarScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     ElevatedButton(
                       onPressed: () {
-                        _gridLoaded = false;
+                        _lastLoadedCenter = null;
                         _loadGridIfNeeded(center);
                       },
                       child: Text(l10n.retry),
