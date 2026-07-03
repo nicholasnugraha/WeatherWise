@@ -56,6 +56,7 @@ class AppLocalizations {
     'radarReload': 'Muat ulang data',
     'radarPlay': 'Putar',
     'radarPause': 'Jeda',
+    'radarSpeed': 'Kecepatan',
     'forecastTitle': 'Prakiraan',
     'noForecastData': 'Tidak ada data prakiraan.',
     'loadingForecast': 'Memuat prakiraan...',
@@ -98,6 +99,7 @@ class AppLocalizations {
   String get radarReload => _get('radarReload', 'Reload data');
   String get radarPlay => _get('radarPlay', 'Play');
   String get radarPause => _get('radarPause', 'Pause');
+  String get radarSpeed => _get('radarSpeed', 'Speed');
   String get forecastTitle => _get('forecastTitle', 'Forecast');
   String get noForecastData =>
       _get('noForecastData', 'No forecast data available.');

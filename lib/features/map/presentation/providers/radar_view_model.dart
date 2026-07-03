@@ -12,6 +12,7 @@ class RadarState {
   final PrecipitationGrid? grid;
   final int currentFrameIndex;
   final bool isPlaying;
+  final double playbackSpeed;
   final String? errorMessage;
 
   const RadarState({
@@ -19,6 +20,7 @@ class RadarState {
     this.grid,
     this.currentFrameIndex = 0,
     this.isPlaying = false,
+    this.playbackSpeed = 1.0,
     this.errorMessage,
   });
 
@@ -27,6 +29,7 @@ class RadarState {
     PrecipitationGrid? grid,
     int? currentFrameIndex,
     bool? isPlaying,
+    double? playbackSpeed,
     String? errorMessage,
   }) {
     return RadarState(
@@ -34,6 +37,7 @@ class RadarState {
       grid: grid ?? this.grid,
       currentFrameIndex: currentFrameIndex ?? this.currentFrameIndex,
       isPlaying: isPlaying ?? this.isPlaying,
+      playbackSpeed: playbackSpeed ?? this.playbackSpeed,
       errorMessage: errorMessage,
     );
   }
@@ -92,7 +96,7 @@ class RadarViewModel extends StateNotifier<RadarState> {
     state = state.copyWith(currentFrameIndex: prev);
   }
 
-  /// Toggle auto-play. When playing, advances frame every 500ms and loops.
+  /// Toggle auto-play. When playing, advances frame based on current speed.
   void togglePlay() {
     if (state.isPlaying) {
       _playTimer?.cancel();
@@ -100,10 +104,26 @@ class RadarViewModel extends StateNotifier<RadarState> {
       state = state.copyWith(isPlaying: false);
     } else {
       state = state.copyWith(isPlaying: true);
-      _playTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
-        nextFrame();
-      });
+      _startPlayTimer();
     }
+  }
+
+  /// Set playback speed and restart timer if currently playing.
+  void setPlaybackSpeed(double speed) {
+    _playTimer?.cancel();
+    _playTimer = null;
+    state = state.copyWith(playbackSpeed: speed);
+    if (state.isPlaying) {
+      _startPlayTimer();
+    }
+  }
+
+  /// Start the play timer with current speed.
+  void _startPlayTimer() {
+    final interval = Duration(milliseconds: (500 / state.playbackSpeed).round());
+    _playTimer = Timer.periodic(interval, (_) {
+      nextFrame();
+    });
   }
 
   @override

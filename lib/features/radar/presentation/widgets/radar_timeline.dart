@@ -26,6 +26,21 @@ class RadarTimeline extends ConsumerStatefulWidget {
 }
 
 class _RadarTimelineState extends ConsumerState<RadarTimeline> {
+  static const _speeds = [0.5, 1.0, 1.5];
+
+  String _speedLabel(double speed) {
+    if (speed == 0.5) return '0.5x';
+    if (speed == 1.5) return '1.5x';
+    return '1.0x';
+  }
+
+  double _nextSpeed(double current) {
+    final idx = _speeds.indexOf(current);
+    // If current is not in the list, default to 1.0x
+    if (idx == -1) return 1.0;
+    return _speeds[(idx + 1) % _speeds.length];
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.timestamps.isEmpty) return const SizedBox.shrink();
@@ -47,6 +62,9 @@ class _RadarTimelineState extends ConsumerState<RadarTimeline> {
         current.month == now.month &&
         current.day == now.day &&
         current.hour == now.hour);
+
+    final radarState = ref.watch(radarViewModelProvider);
+    final speedLabel = _speedLabel(radarState.playbackSpeed);
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -145,16 +163,33 @@ class _RadarTimelineState extends ConsumerState<RadarTimeline> {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          // Speed indicator
-          Text(
-            '1x',
-            style: TextStyle(
-              fontFamily: 'Inter',
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              height: 1.333,
-              letterSpacing: 0.05 * 12,
-              color: scheme.onSurfaceVariant,
+          // Speed selector — tap to cycle: 0.5x → 1.0x → 1.5x → 0.5x
+          Tooltip(
+            message: AppLocalizations.of(context).radarSpeed,
+            child: GestureDetector(
+              onTap: () {
+                final next = _nextSpeed(radarState.playbackSpeed);
+                ref
+                    .read(radarViewModelProvider.notifier)
+                    .setPlaybackSpeed(next);
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                ),
+                child: Text(
+                  speedLabel,
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
