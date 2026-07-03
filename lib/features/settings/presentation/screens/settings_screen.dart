@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/localization/app_localizations.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../providers/settings_view_model.dart';
+import '../widgets/city_search_field.dart';
 
 /// Settings screen with 4 sections:
 ///   - Tema (Light / Dark / System)
@@ -18,12 +19,14 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  final _cityController = TextEditingController();
+  String _pendingCity = '';
 
   @override
-  void dispose() {
-    _cityController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    // ignore: discarded_futures
+    final settings = ref.read(settingsViewModelProvider).settings;
+    _pendingCity = settings.defaultCity;
   }
 
   @override
@@ -32,11 +35,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final settings = settingsState.settings;
     final viewModel = ref.read(settingsViewModelProvider.notifier);
     final l10n = AppLocalizations.of(context);
-    // Sync text controller with persisted default city only when it is empty
-    // (initial load). Avoid overwriting while the user is typing.
-    if (_cityController.text.isEmpty) {
-      _cityController.text = settings.defaultCity;
-    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
@@ -90,17 +88,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
           // Default City
           _SectionTitle(title: l10n.settingsDefaultCity),
-          TextField(
-            controller: _cityController,
-            decoration: InputDecoration(
-              hintText: l10n.settingsDefaultCityHint,
-            ),
-            onSubmitted: (value) => viewModel.updateDefaultCity(value.trim()),
+          CitySearchField(
+            initialValue: settings.defaultCity,
+            hintText: l10n.settingsDefaultCityHint,
+            onChanged: (value) => _pendingCity = value,
+            onSelected: (value) {
+              _pendingCity = value;
+              viewModel.updateDefaultCity(value);
+            },
           ),
           const SizedBox(height: AppSpacing.md),
           FilledButton.icon(
-            onPressed: () =>
-                viewModel.updateDefaultCity(_cityController.text.trim()),
+            onPressed: () => viewModel.updateDefaultCity(_pendingCity.trim()),
             icon: const Icon(Icons.save),
             label: Text(l10n.settingsSave),
           ),
