@@ -42,6 +42,9 @@ class AppLocalizations {
     'settingsDefaultCity': 'Kota Default',
     'settingsDefaultCityHint': 'Contoh: Jakarta',
     'settingsSave': 'Simpan',
+    'settingsSaved': 'Tersimpan',
+    'settingsSaveError': 'Gagal menyimpan',
+    'settingsCityEmpty': 'Kota tidak boleh kosong',
     'settingsAbout': 'Tentang',
     'settingsVersion': 'Versi',
     'settingsAttribution': 'Data cuaca oleh Open-Meteo dan OpenWeatherMap',
@@ -80,6 +83,9 @@ class AppLocalizations {
   String get settingsDefaultCityHint =>
       _get('settingsDefaultCityHint', 'e.g. Jakarta');
   String get settingsSave => _get('settingsSave', 'Save');
+  String get settingsSaved => _get('settingsSaved', 'Saved');
+  String get settingsSaveError => _get('settingsSaveError', 'Failed to save');
+  String get settingsCityEmpty => _get('settingsCityEmpty', 'City cannot be empty');
   String get settingsAbout => _get('settingsAbout', 'About');
   String get settingsVersion => _get('settingsVersion', 'Version');
   String get settingsAttribution =>

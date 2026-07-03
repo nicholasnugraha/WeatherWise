@@ -29,6 +29,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _pendingCity = settings.defaultCity;
   }
 
+  /// Saves the default city with validation and user feedback.
+  void _saveCity() {
+    final l10n = AppLocalizations.of(context);
+    final city = _pendingCity.trim();
+
+    if (city.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.settingsCityEmpty)),
+      );
+      return;
+    }
+
+    final viewModel = ref.read(settingsViewModelProvider.notifier);
+    viewModel.updateDefaultCity(city);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.settingsSaved)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsState = ref.watch(settingsViewModelProvider);
@@ -94,12 +114,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onChanged: (value) => _pendingCity = value,
             onSelected: (value) {
               _pendingCity = value;
-              viewModel.updateDefaultCity(value);
+              _saveCity();
             },
           ),
           const SizedBox(height: AppSpacing.md),
           FilledButton.icon(
-            onPressed: () => viewModel.updateDefaultCity(_pendingCity.trim()),
+            onPressed: _saveCity,
             icon: const Icon(Icons.save),
             label: Text(l10n.settingsSave),
           ),
