@@ -94,12 +94,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             controller: _cityController,
             decoration: InputDecoration(
               hintText: l10n.settingsDefaultCityHint,
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.save),
-                onPressed: () => viewModel.updateDefaultCity(_cityController.text.trim()),
-              ),
             ),
             onSubmitted: (value) => viewModel.updateDefaultCity(value.trim()),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          FilledButton.icon(
+            onPressed: () =>
+                viewModel.updateDefaultCity(_cityController.text.trim()),
+            icon: const Icon(Icons.save),
+            label: Text(l10n.settingsSave),
           ),
 
           const SizedBox(height: AppSpacing.lg),

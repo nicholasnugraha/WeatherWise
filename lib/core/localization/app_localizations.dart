@@ -22,7 +22,8 @@ class AppLocalizations {
 
   static AppLocalizations fromCode(String code) => AppLocalizations._(code);
 
-  String _get(String id, String en) => languageCode == 'en' ? en : _idMap[id] ?? en;
+  String _get(String id, String en) =>
+      languageCode == 'en' ? en : _idMap[id] ?? en;
 
   static final _idMap = <String, String>{
     'appTitle': 'WeatherWise',
@@ -40,6 +41,7 @@ class AppLocalizations {
     'settingsLanguageEnglish': 'English',
     'settingsDefaultCity': 'Kota Default',
     'settingsDefaultCityHint': 'Contoh: Jakarta',
+    'settingsSave': 'Simpan',
     'settingsAbout': 'Tentang',
     'settingsVersion': 'Versi',
     'settingsAttribution': 'Data cuaca oleh Open-Meteo dan OpenWeatherMap',
@@ -77,6 +79,7 @@ class AppLocalizations {
   String get settingsDefaultCity => _get('settingsDefaultCity', 'Default City');
   String get settingsDefaultCityHint =>
       _get('settingsDefaultCityHint', 'e.g. Jakarta');
+  String get settingsSave => _get('settingsSave', 'Save');
   String get settingsAbout => _get('settingsAbout', 'About');
   String get settingsVersion => _get('settingsVersion', 'Version');
   String get settingsAttribution =>
