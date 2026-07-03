@@ -125,7 +125,7 @@ class _CitySearchFieldState extends ConsumerState<CitySearchField> {
           onSubmitted: _submit,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
-            hintText: hintText ?? l10n.searchHint,
+            hintText: widget.hintText ?? l10n.searchHint,
             prefixIcon: Icon(
               Icons.search,
               color: scheme.onSurfaceVariant,
