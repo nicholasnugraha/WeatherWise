@@ -67,25 +67,30 @@ class _RadarTimelineState extends ConsumerState<RadarTimeline> {
       child: Row(
         children: [
           // Play / Pause button
-          // Use IconButton inside a circular Container instead of
-          // Material+InkWell. The previous implementation could render an
-          // empty circle on Flutter web (ink splash clipped the child icon).
-          Container(
-            decoration: BoxDecoration(
-              color: scheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              icon: Icon(
-                widget.isPlaying ? Icons.pause : Icons.play_arrow,
-                color: scheme.onPrimaryContainer,
-                size: 20,
-              ),
-              onPressed: () =>
+          // Use a fixed-size circle + GestureDetector instead of IconButton.
+          // IconButton without explicit sizing sometimes renders an empty
+          // circle on Flutter web, especially after hot reload / resize.
+          Tooltip(
+            message: widget.isPlaying
+                ? AppLocalizations.of(context).radarPause
+                : AppLocalizations.of(context).radarPlay,
+            child: GestureDetector(
+              onTap: () =>
                   ref.read(radarViewModelProvider.notifier).togglePlay(),
-              tooltip: widget.isPlaying
-                  ? AppLocalizations.of(context).radarPause
-                  : AppLocalizations.of(context).radarPlay,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: scheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  widget.isPlaying ? Icons.pause : Icons.play_arrow,
+                  color: scheme.onPrimaryContainer,
+                  size: 24,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
